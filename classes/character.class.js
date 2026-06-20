@@ -1,7 +1,7 @@
 class Character extends MovableObject {
     height = 300;
     width = 450;
-    y = 135;
+    y = 0;
     x = -50;
     speed = 5;
     otherDirection = false; // Assuming character faces right by default
@@ -17,12 +17,27 @@ class Character extends MovableObject {
             './img/wizards/PNG/2_WIZARD/Wizard_02__RUN_008.png',
             './img/wizards/PNG/2_WIZARD/Wizard_02__RUN_009.png',
         ];
-        world;
+
+    IMAGES_JUMP = [
+            'img/wizards/PNG/2_WIZARD/Wizard_02__JUMP_000.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__JUMP_001.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__JUMP_002.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__JUMP_003.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__JUMP_004.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__JUMP_005.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__JUMP_006.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__JUMP_007.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__JUMP_008.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__JUMP_009.png'
+        ];
+
+    world;
 
     constructor() {
         super().loadImage('./img/wizards/PNG/2_WIZARD/Wizard_02__RUN_000.png');
         this.loadImages(this.IMAGES_RUN);
-
+        this.loadImages(this.IMAGES_JUMP);
+        this.applyGravity();
         this.animate();
     }
 
@@ -42,9 +57,14 @@ class Character extends MovableObject {
 
         setInterval(() => {
 
-            if (this.world.keyboard.RIGHT || this.world.keyboard.LEFT) {
-              //Walk Animation
-                this.playAnimation(this.IMAGES_RUN);
+            if(this.isAboveGround()) {
+                this.playAnimation(this.IMAGES_JUMP);
+            } else {
+
+                if (this.world.keyboard.RIGHT || this.world.keyboard.LEFT) {
+                 //Walk Animation
+                    this.playAnimation(this.IMAGES_RUN);
+                }
             }
         }, 50); 
     }
