@@ -3,6 +3,7 @@ class Character extends MovableObject {
     width = 450;
     y = 135;
     x = -50;
+    speed = 5;
     otherDirection = false; // Assuming character faces right by default
     IMAGES_RUN = [
             './img/wizards/PNG/2_WIZARD/Wizard_02__RUN_000.png',
@@ -16,6 +17,7 @@ class Character extends MovableObject {
             './img/wizards/PNG/2_WIZARD/Wizard_02__RUN_008.png',
             './img/wizards/PNG/2_WIZARD/Wizard_02__RUN_009.png',
         ];
+        world;
 
     constructor() {
         super().loadImage('./img/wizards/PNG/2_WIZARD/Wizard_02__RUN_000.png');
@@ -27,11 +29,24 @@ class Character extends MovableObject {
     animate() {
 
         setInterval(() => {
-            let i = this.currentImage % this.IMAGES_RUN.length; // Loop through images
-            let path = this.IMAGES_RUN[i];
-            this.img = this.imageCache[path];
-            this.currentImage++;
-        }, 100); 
+            if (this.world.keyboard.RIGHT && this.x < this.world.level.level_end_x -780) { // Prevent moving right beyond the level end
+                this.x += this.speed;
+                this.otherDirection = false;
+            }
+            if (this.world.keyboard.LEFT && this.x > 0) { // Prevent moving left beyond the starting point
+                this.x -= this.speed;
+                this.otherDirection = true;
+            }
+            this.world.camera_x = -this.x + -50; // Move the camera based on the character's position
+        }, 1000 / 60); // Run at 60 FPS
+
+        setInterval(() => {
+
+            if (this.world.keyboard.RIGHT || this.world.keyboard.LEFT) {
+              //Walk Animation
+                this.playAnimation(this.IMAGES_RUN);
+            }
+        }, 50); 
     }
 
     jump() {

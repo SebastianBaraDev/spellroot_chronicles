@@ -7,6 +7,7 @@ class MovableObject {
     speed = 0.05;
     imageCache = [];
     currentImage = 0;
+    OtherDirection = false;
 
     loadImage(path) {
         this.img = new Image(); //this.img = document.getElementById(Image) <img id="Image">
@@ -19,6 +20,13 @@ class MovableObject {
             img.src = path;
             this.imageCache[path] = img;
         });
+    }
+
+    playAnimation(images){
+            let i = this.currentImage % images.length; // Loop through images
+            let path = images[i];
+            this.img = this.imageCache[path];
+            this.currentImage++;
     }
 
     moveRight() {
