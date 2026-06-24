@@ -11,6 +11,7 @@ class MovableObject {
     speedY = 0;
     acceleration = 2.5;
     offset = { top: 0, bottom: 0, left: 0, right: 0 };
+    energy = 100;
 
 
     applyGravity () {
@@ -49,16 +50,31 @@ class MovableObject {
 
     drawFrame(ctx) {
         const o = this.offset || { top: 0, bottom: 0, left: 0, right: 0 };
-        ctx.beginPath();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = 'blue';
-        ctx.rect(
-            this.x + o.left,
-            this.y + o.top,
-            this.width - o.left - o.right,
-            this.height - o.top - o.bottom
+
+        if ( this instanceof Character || this instanceof Enemie || this instanceof Endboss){
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = 'blue';
+            ctx.rect(
+                this.x + o.left,
+                this.y + o.top,
+                this.width - o.left - o.right,
+                this.height - o.top - o.bottom
+            );
+            ctx.stroke();
+        }
+    }
+
+    isColliding(other) {
+        const o1 = this.offset || { top: 0, bottom: 0, left: 0, right: 0 };
+        const o2 = other.offset || { top: 0, bottom: 0, left: 0, right: 0 };
+
+        return (
+            this.x + o1.left < other.x + other.width - o2.right &&
+            this.x + this.width - o1.right > other.x + o2.left &&
+            this.y + o1.top < other.y + other.height - o2.bottom &&
+            this.y + this.height - o1.bottom > other.y + o2.top
         );
-        ctx.stroke();
     }
 
     playAnimation(images){

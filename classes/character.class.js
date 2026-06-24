@@ -31,6 +31,19 @@ class Character extends MovableObject {
             'img/wizards/PNG/2_WIZARD/Wizard_02__JUMP_009.png'
         ];
 
+    IMAGES_DIE = [
+            'img/wizards/PNG/2_WIZARD/Wizard_02__DIE_000.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__DIE_001.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__DIE_002.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__DIE_003.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__DIE_004.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__DIE_005.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__DIE_006.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__DIE_007.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__DIE_008.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__DIE_009.png'
+        ];
+
     offset = { top: 80, bottom: 20, left: 160, right: 150 };
     world;
     walking_sound = new Audio('audio/running.mp3');
