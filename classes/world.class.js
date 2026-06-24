@@ -26,8 +26,8 @@ class World {
 
         this.addObjectToMap(this.level.backgroundObjects);
 
-        this.addToMap(this.character);
         this.addObjectToMap(this.level.enemies);
+        this.addToMap(this.character);
         this.addObjectToMap(this.level.clouds);
 
         this.ctx.translate(-this.camera_x, 0); // Move the camera back to the original position
@@ -39,17 +39,23 @@ class World {
         objects.forEach(obj => this.addToMap(obj));
     }
 
-    addToMap(movableObject) {
-        if (!movableObject.img) return;
-        if (movableObject.otherDirection) {
-            this.ctx.save();
-            this.ctx.translate(movableObject.x + movableObject.width, movableObject.y);
-            this.ctx.scale(-1, 1);
-            this.ctx.drawImage(movableObject.img, 0, 0, movableObject.width, movableObject.height);
+    addToMap(mo) {
+        if (!mo.img) return;
+
+        if (mo.otherDirection) {
+            this.flipImage(mo);
+            mo.draw(this.ctx);
             this.ctx.restore();
         } else {
-            this.ctx.drawImage(movableObject.img, movableObject.x, movableObject.y, movableObject.width, movableObject.height);
+            mo.draw(this.ctx);
         }
-}
 
+        mo.drawFrame(this.ctx);
+    }
+
+    flipImage(mo){
+            this.ctx.save();
+            this.ctx.translate(mo.x + mo.width, mo.y);
+            this.ctx.scale(-1, 1);
+    }
 }

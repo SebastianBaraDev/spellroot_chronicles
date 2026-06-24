@@ -3,6 +3,7 @@ class Enemie extends MovableObject {
     width = 300;
     y = 250;
     otherDirection = true; // Assuming enemies face left by default
+    offset = { top: 20, bottom: 0, left: 90, right: 100 };
     IMAGES_RUN = [
             'img/enemies/_PNG/1/Ent_01__RUN_000.png',
             'img/enemies/_PNG/1/Ent_01__RUN_001.png',
@@ -27,7 +28,9 @@ class Enemie extends MovableObject {
 
 
     animate() {
-        this.moveLeft();
+        setInterval(() => {
+            this.moveLeft();
+        }, 1000/60); // Run at 60 FPS
 
         setInterval(() => {
                 this.playAnimation(this.IMAGES_RUN);
