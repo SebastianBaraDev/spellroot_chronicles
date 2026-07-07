@@ -43,6 +43,19 @@ class Character extends MovableObject {
             'img/wizards/PNG/2_WIZARD/Wizard_02__DIE_008.png',
             'img/wizards/PNG/2_WIZARD/Wizard_02__DIE_009.png'
         ];
+    IMAGES_HURT = [
+            'img/wizards/PNG/2_WIZARD/Wizard_02__HURT_000.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__HURT_001.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__HURT_002.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__HURT_003.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__HURT_004.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__HURT_005.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__HURT_006.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__HURT_007.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__HURT_008.png',
+            'img/wizards/PNG/2_WIZARD/Wizard_02__HURT_009.png'
+    ]
+    
 
     offset = { top: 80, bottom: 20, left: 160, right: 150 };
     world;
@@ -52,6 +65,8 @@ class Character extends MovableObject {
         super().loadImage('./img/wizards/PNG/2_WIZARD/Wizard_02__RUN_000.png');
         this.loadImages(this.IMAGES_RUN);
         this.loadImages(this.IMAGES_JUMP);
+        this.loadImages(this.IMAGES_DIE);
+        this.loadImages(this.IMAGES_HURT);
         this.applyGravity();
         this.animate();
     }
@@ -80,10 +95,13 @@ class Character extends MovableObject {
 
         setInterval(() => {
 
-            if(this.isAboveGround()) {
+            if(this.isDead()){
+                this.playAnimation(this.IMAGES_DIE, false);
+            } else if(this.isHurt()) {
+                this.playAnimation(this.IMAGES_HURT);
+            } else if(this.isAboveGround()) {
                 this.playAnimation(this.IMAGES_JUMP);
             } else {
-
                 if (this.world.keyboard.RIGHT || this.world.keyboard.LEFT) {
                  //Walk Animation
                     this.playAnimation(this.IMAGES_RUN);

@@ -1,17 +1,11 @@
-class MovableObject {
-    x = 120;
-    y = 260;
-    img;
-    height = 200;
-    width = 300;
+class MovableObject extends DrawableObject {
     speed = 0.05;
-    imageCache = [];
-    currentImage = 0;
     OtherDirection = false;
     speedY = 0;
     acceleration = 2.5;
-    offset = { top: 0, bottom: 0, left: 0, right: 0 };
     energy = 100;
+    lastHit = 0;
+    offset = { top: 0, bottom: 0, left: 0, right: 0 };
 
 
     applyGravity () {
@@ -25,27 +19,6 @@ class MovableObject {
 
     isAboveGround() {
         return this.y < 130
-    }
-
-    loadImage(path) {
-        this.img = new Image(); //this.img = document.getElementById(Image) <img id="Image">
-        this.img.src = path;
-    }
-
-    loadImages(arr) {
-        arr.forEach((path) => {
-            let img = new Image();
-            img.src = path;
-            this.imageCache[path] = img;
-        });
-    }
-
-    draw(ctx){
-        if (this.otherDirection) {
-            ctx.drawImage(this.img, 0, 0, this.width, this.height);
-        } else {
-            ctx.drawImage(this.img, this.x, this.y, this.width, this.height);
-        }
     }
 
     drawFrame(ctx) {
@@ -77,11 +50,32 @@ class MovableObject {
         );
     }
 
-    playAnimation(images){
-            let i = this.currentImage % images.length; // Loop through images
+    hit() {
+        this.energy -= 5;
+        if(this.energy < 0) {
+            this.energy = 0;
+        } else {
+            this.lastHit = new Date().getTime();
+        }
+    }
+
+    isHurt() {
+        let timepassed = new Date().getTime() - this.lastHit; //Difference in ms
+        timepassed = timepassed / 1000; // Difference in s
+        return timepassed < 0.5;
+    }
+
+    isDead() {
+        return this.energy == 0;
+    }
+
+    playAnimation(images, loop = true){
+            let i = this.currentImage % images.length;
             let path = images[i];
             this.img = this.imageCache[path];
-            this.currentImage++;
+            if (loop || this.currentImage < images.length - 1) {
+                this.currentImage++;
+            }
     }
 
     moveRight() {

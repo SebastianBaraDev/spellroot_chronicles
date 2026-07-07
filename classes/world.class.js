@@ -1,6 +1,7 @@
 class World {
     character = new Character();
     level = level1;
+    statusBar = new StatusBar();
     canvas;
     ctx;
     keyboard;
@@ -33,6 +34,8 @@ class World {
 
         this.ctx.translate(-this.camera_x, 0); // Move the camera back to the original position
 
+        this.addToMap(this.statusBar); // Statusbar fixed on screen (outside camera translate)
+
         requestAnimationFrame(() => this.draw()); // Call draw again on the next frame
     }
 
@@ -64,12 +67,10 @@ class World {
     checkCollisions() {
             this.level.enemies.forEach(enemy => {
                 if (this.character.isColliding(enemy)) {
-                    this.character.energy -= 5;
+                    this.character.hit();
+                    this.statusBar.setPercentage(this.character.energy);
                     console.log('Kollision mit Enemy!', this.character.energy);
-                }
-                if (this.character.energy <= 0) {
-                 
-                }                
+                }               
             });
     }
 
