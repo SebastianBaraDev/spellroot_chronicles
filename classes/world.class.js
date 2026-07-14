@@ -6,6 +6,7 @@ class World {
     ctx;
     keyboard;
     camera_x = 0;
+    throwableObjects = [];
 
     constructor(canvas, keyboard) {
         this.canvas = canvas;

@@ -21,23 +21,6 @@ class MovableObject extends DrawableObject {
         return this.y < 130
     }
 
-    drawFrame(ctx) {
-        const o = this.offset || { top: 0, bottom: 0, left: 0, right: 0 };
-
-        if ( this instanceof Character || this instanceof Enemie || this instanceof Endboss){
-            ctx.beginPath();
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = 'blue';
-            ctx.rect(
-                this.x + o.left,
-                this.y + o.top,
-                this.width - o.left - o.right,
-                this.height - o.top - o.bottom
-            );
-            ctx.stroke();
-        }
-    }
-
     isColliding(other) {
         const o1 = this.offset || { top: 0, bottom: 0, left: 0, right: 0 };
         const o2 = other.offset || { top: 0, bottom: 0, left: 0, right: 0 };

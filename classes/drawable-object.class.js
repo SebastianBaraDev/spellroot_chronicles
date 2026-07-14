@@ -27,4 +27,21 @@ class DrawableObject {
             ctx.drawImage(this.img, this.x, this.y, this.width, this.height);
         }
     }
+
+        drawFrame(ctx) {
+        const o = this.offset || { top: 0, bottom: 0, left: 0, right: 0 };
+
+        if ( this instanceof Character || this instanceof Enemie || this instanceof Endboss){
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = 'blue';
+            ctx.rect(
+                this.x + o.left,
+                this.y + o.top,
+                this.width - o.left - o.right,
+                this.height - o.top - o.bottom
+            );
+            ctx.stroke();
+        }
+    }
 }

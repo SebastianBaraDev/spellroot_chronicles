@@ -1,12 +1,12 @@
-class StatusBar extends MovableObject {
+class StatusBar extends DrawableObject {
 
     ENERGY = [
         "img/statusbar/1/spellroot_bar_000pct.png",
-        "img/statusbar/1/spellroot_bar_200pct.png",
-        "img/statusbar/1/spellroot_bar_400pct.png",
-        "img/statusbar/1/spellroot_bar_600pct.png",
-        "img/statusbar/1/spellroot_bar_800pct.png",
-        "img/statusbar/1/spellroot_bar_1000pct.png"
+        "img/statusbar/1/spellroot_bar_020pct.png",
+        "img/statusbar/1/spellroot_bar_040pct.png",
+        "img/statusbar/1/spellroot_bar_060pct.png",
+        "img/statusbar/1/spellroot_bar_080pct.png",
+        "img/statusbar/1/spellroot_bar_100pct.png"
     ];
 
     percentage = 100;
@@ -14,10 +14,10 @@ class StatusBar extends MovableObject {
     constructor() {
         super();
         this.loadImages(this.ENERGY);
-        this.x = 20;
-        this.y = 20;
-        this.width = 200;
-        this.height = 60;
+        this.x = 0;
+        this.y = 0;
+        this.width = 240;
+        this.height = 80;
         this.setPercentage(100);
     }
 
