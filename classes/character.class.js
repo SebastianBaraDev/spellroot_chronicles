@@ -74,21 +74,25 @@ class Character extends MovableObject {
     animate() {
 
         setInterval(() => {
+            if (this.isDead()) return; // Stop movement if dead
+
             if (this.world.keyboard.RIGHT && this.x < this.world.level.level_end_x -780) { // Prevent moving right beyond the level end
                 this.moveRight();
                 this.otherDirection = false;
-                this.walking_sound.play();
             }
 
             if (this.world.keyboard.LEFT && this.x > 0) { // Prevent moving left beyond the starting point
                 this.moveLeft();
                 this.otherDirection = true;
-                this.walking_sound.play();
             }
+
+            this.handleWalkingSound(); // Handle walking sound based on movement
 
             if (this.world.keyboard.UP && !this.isAboveGround()){
                 this.jump();
             }
+
+            this.checkThrow();
 
             this.world.camera_x = -this.x + -50; // Move the camera based on the character's position
         }, 1000 / 60); // Run at 60 FPS
@@ -96,18 +100,39 @@ class Character extends MovableObject {
         setInterval(() => {
 
             if(this.isDead()){
-                this.playAnimation(this.IMAGES_DIE, false);
+                this.playDeathAnimation();
             } else if(this.isHurt()) {
                 this.playAnimation(this.IMAGES_HURT);
             } else if(this.isAboveGround()) {
                 this.playAnimation(this.IMAGES_JUMP);
             } else {
                 if (this.world.keyboard.RIGHT || this.world.keyboard.LEFT) {
-                 //Walk Animation
-                    this.playAnimation(this.IMAGES_RUN);
+                    this.playAnimation(this.IMAGES_RUN); // Play running animation when moving left or right
                 }
             }
         }, 50); 
+    }
+
+    handleWalkingSound() {
+        const isMoving = this.world.keyboard.RIGHT || this.world.keyboard.LEFT;
+
+        if (isMoving && !this.isAboveGround()) {
+            this.walking_sound.play();
+        } else {
+            this.walking_sound.pause();
+        }
+    }
+
+    checkThrow() {
+        if (this.world.keyboard.D && this.canThrow()) {
+            this.world.throwPotion();
+            this.lastThrow = new Date().getTime();
+        }
+    }
+
+    canThrow() {
+        let timePassed = new Date().getTime() - (this.lastThrow || 0);
+        return timePassed > 500; // 0,5 Sekunden Abstand zwischen Würfen
     }
 
 }

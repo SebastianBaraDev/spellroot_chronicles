@@ -13,6 +13,7 @@ function initializeGame() {
             if (event.keyCode == 38) keyboard.UP = true;
             if (event.keyCode == 40) keyboard.DOWN = true;
             if (event.keyCode == 32) keyboard.SPACE = true;
+            if (event.keyCode == 68) keyboard.D = true;
         });
 
         window.addEventListener('keyup', (event) => {
@@ -21,4 +22,5 @@ function initializeGame() {
             if (event.keyCode == 38) keyboard.UP = false;
             if (event.keyCode == 40) keyboard.DOWN = false;
             if (event.keyCode == 32) keyboard.SPACE = false;
+            if (event.keyCode == 68) keyboard.D = false;
         });

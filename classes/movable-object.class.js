@@ -5,6 +5,7 @@ class MovableObject extends DrawableObject {
     acceleration = 2.5;
     energy = 100;
     lastHit = 0;
+    deathAnimationStarted = false;
     offset = { top: 0, bottom: 0, left: 0, right: 0 };
 
 
@@ -72,4 +73,13 @@ class MovableObject extends DrawableObject {
     jump() {
         this.speedY = 30;
     }
+
+    playDeathAnimation() {
+        if (!this.deathAnimationStarted) {
+            this.currentImage = 0;
+            this.deathAnimationStarted = true;
+        }
+        this.playAnimation(this.IMAGES_DIE, false);
+    }
+    
 }
