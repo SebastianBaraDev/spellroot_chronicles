@@ -1,9 +1,42 @@
+@font-face {
+    font-family: 'Roots';
+    src: url('./fonts/roots.ttf') format('truetype');
+}
+
 body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    background-image: url('img/canvas-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    font-family: 'Roots',Arial, 'Helvetica', sans-serif;
+    height: 100vh;
+    margin: 0;
+}
+
+h1 {
+    color: #fff;
+    margin-top: 20px;
+    font-size: 88px;
+    margin-block-end: 20px;
 }
 
 canvas {
     background-color: #000000;
+    display: block;
+}
+
+/* Smartphone */
+@media only screen and (max-width: 720px) {
+    canvas {
+        width: 100%;
+    }
+}
+
+@media only screen and (max-height: 480px) {
+    canvas {
+        height: 100vh;
+    }
 }

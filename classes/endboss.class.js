@@ -1,8 +1,10 @@
 class Endboss extends MovableObject {
     otherDirection = true;
-    walking_sound = new Audio('audio/monster-footsteps.mp3');
     energy = 20;
+    footstepsSound = new Audio('audio/monster-footsteps.mp3');
+    hurtSound = new Audio('audio/deep-growl.mp3');
     offset = { top: 80, bottom: 20, left: 200, right: 220 };
+
     IMAGES_WALK = [
         'img/enemies/_PNG/2/Ent_02__WALK_000.png',
         'img/enemies/_PNG/2/Ent_02__WALK_001.png',
@@ -47,10 +49,12 @@ class Endboss extends MovableObject {
         this.loadImages(this.IMAGES_DIE);
         this.x = 2900; // Position the endboss further to the right
         this.y = -40;
-        this.speed = 0.05;
+        this.speed = 0.1;
         this.height = 500;
         this.width = 700;
         this.animate();
+        this.footstepsSound.loop = true; // Set the footsteps sound to loop
+        this.footstepsSound.volume = 0.3; // Set the volume to 30%
     }
 
     animate() {
@@ -66,6 +70,28 @@ class Endboss extends MovableObject {
             } else {
                 this.playAnimation(this.IMAGES_WALK);
             }
-        }, 100);
+        }, 150);
+
+        setInterval(() => this.handleFootstepsSound(), 300);
+    }
+
+    handleFootstepsSound() {
+        if (!this.world) return; // world ist am Anfang noch nicht gesetzt
+
+        if (this.isDead()) {
+            this.footstepsSound.pause();
+            return;
+        }
+
+        const isVisible = this.x + this.width > -this.world.camera_x
+            && this.x < -this.world.camera_x + this.world.canvas.width;
+
+        isVisible ? this.footstepsSound.play() : this.footstepsSound.pause();
+    }
+
+    hit() {
+        super.hit();
+        this.hurtSound.currentTime = 0;
+        this.hurtSound.play();
     }
 }

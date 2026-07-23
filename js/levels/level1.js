@@ -1,4 +1,6 @@
-const level1 = new Level(
+let level1;
+function initLevel1() {
+level1 = new Level(
     [
         new Enemie(),
         new Enemie(),
@@ -17,7 +19,7 @@ const level1 = new Level(
     createCollectables(10),
     createPotions(5),
     createScrolls(3)
-);
+);}
 
 function createBackgrounds() {
     let backgrounds = [];

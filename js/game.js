@@ -8,6 +8,7 @@ function initializeGame() {
 }
 
         window.addEventListener('keydown', (event) => {
+            resumeBackgroundMusicIfNeeded();
             if (event.keyCode == 37) keyboard.LEFT = true;
             if (event.keyCode == 39) keyboard.RIGHT = true;
             if (event.keyCode == 38) keyboard.UP = true;
@@ -24,3 +25,8 @@ function initializeGame() {
             if (event.keyCode == 32) keyboard.SPACE = false;
             if (event.keyCode == 68) keyboard.D = false;
         });
+function resumeBackgroundMusicIfNeeded() {
+    if (world && world.backgroundMusic.paused) {
+        world.backgroundMusic.play().catch(() => {});
+    }
+}

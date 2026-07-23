@@ -5,6 +5,8 @@ class Character extends MovableObject {
     x = -50;
     speed = 5;
     otherDirection = false; // Assuming character faces right by default
+    hurtSound = new Audio('audio/man-hurt.mp3');
+
     IMAGES_RUN = [
             './img/wizards/PNG/2_WIZARD/Wizard_02__RUN_000.png',
             './img/wizards/PNG/2_WIZARD/Wizard_02__RUN_001.png',
@@ -59,7 +61,8 @@ class Character extends MovableObject {
 
     offset = { top: 80, bottom: 20, left: 160, right: 150 };
     world;
-    walking_sound = new Audio('audio/running.mp3');
+    walkingSound = new Audio('audio/running.mp3');
+    jumpSound = new Audio('audio/jump.mp3');
 
     constructor() {
         super().loadImage('./img/wizards/PNG/2_WIZARD/Wizard_02__RUN_000.png');
@@ -90,6 +93,8 @@ class Character extends MovableObject {
 
             if (this.world.keyboard.UP && !this.isAboveGround()){
                 this.jump();
+                this.jumpSound.currentTime = 0; // Reset the jump sound to the beginning
+                this.jumpSound.play();
             }
 
             this.checkThrow();
@@ -117,9 +122,9 @@ class Character extends MovableObject {
         const isMoving = this.world.keyboard.RIGHT || this.world.keyboard.LEFT;
 
         if (isMoving && !this.isAboveGround()) {
-            this.walking_sound.play();
+            this.walkingSound.play();
         } else {
-            this.walking_sound.pause();
+            this.walkingSound.pause();
         }
     }
 
@@ -134,5 +139,11 @@ class Character extends MovableObject {
         let timePassed = new Date().getTime() - (this.lastThrow || 0);
         return timePassed > 500; // 0,5 Sekunden Abstand zwischen Würfen
     }
+
+    hit() {
+    super.hit();
+    this.hurtSound.currentTime = 0;
+    this.hurtSound.play();
+}
 
 }
