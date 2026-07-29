@@ -3,6 +3,18 @@ function fullscreen() {
     enterFullscreen(fullscreen);
 }
 
+function toggleFullscreen() {
+    let fullscreenElement = document.getElementById('fullscreen');
+    const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement
+        || document.mozFullScreenElement || document.msFullscreenElement;
+
+    if (isFullscreen) {
+        exitFullscreen();
+    } else {
+        enterFullscreen(fullscreenElement);
+    }
+}
+
 function enterFullscreen(element) {
     if (element.requestFullscreen) {
         element.requestFullscreen();

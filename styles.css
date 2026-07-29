@@ -28,6 +28,24 @@ canvas {
     display: block;
 }
 
+#fullscreen:fullscreen,
+#fullscreen:-webkit-full-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #000000;
+    width: 100%;
+    height: 100%;
+}
+
+#fullscreen:fullscreen canvas,
+#fullscreen:-webkit-full-screen canvas {
+    width: auto;
+    height: 100%;
+    max-width: 100%;
+    aspect-ratio: 720 / 480; /* haelt das Seitenverhaeltnis, egal wie gross der Bildschirm ist */
+}
+
 /* Smartphone */
 @media only screen and (max-width: 720px) {
     canvas {

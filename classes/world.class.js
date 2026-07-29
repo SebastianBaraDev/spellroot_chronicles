@@ -16,6 +16,8 @@ class World {
     stompSound = new Audio('audio/enemy-hit.mp3');
     gameOverSound = new Audio('audio/game-over.mp3');
     gameOverTriggered = false;
+    replayButtonImage = new Image();
+    replayButton = null;
     backgroundMusic = new Audio('audio/bg-music.mp3');
 
     constructor(canvas, keyboard) {
@@ -23,7 +25,9 @@ class World {
         this.ctx = canvas.getContext('2d');
         this.keyboard = keyboard;
         this.level = level1;
+        this.replayButtonImage.src = 'img/replay-btn.png';
         this.soundButton = new SoundButton(this.canvas.width, (isMuted) => this.applyMuteToAllSounds(isMuted));
+        this.fullscreenButton = new FullscreenButton(this.canvas.width, this.canvas.height, () => toggleFullscreen());
         this.draw();
         this.setWorld();
         this.run();
@@ -59,6 +63,7 @@ class World {
         this.addToMap(this.collectableBar); // Collectable bar fixed on screen (outside camera translate)
         this.addToMap(this.potionBar);
         this.addToMap(this.soundButton);
+        this.addToMap(this.fullscreenButton);
 
         if (this.character.isDead()) {
             this.handleGameOver();
@@ -79,6 +84,30 @@ class World {
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2);
+
+        const buttonSize = 80;
+        this.replayButton = {
+            x: this.canvas.width / 2 - buttonSize / 2,
+            y: this.canvas.height / 2 + 40,
+            width: buttonSize,
+            height: buttonSize,
+        };
+        this.ctx.filter = 'invert(1)';
+        this.ctx.filter = 'invert(1)';
+        this.ctx.drawImage(this.replayButtonImage, this.replayButton.x, this.replayButton.y, buttonSize, buttonSize);
+        this.ctx.filter = 'none';
+        this.ctx.filter = 'none';
+    }
+
+    handleReplayButtonClick(mouseX, mouseY) {
+        if (!this.character.isDead() || !this.replayButton) return;
+
+        const isClicked = mouseX >= this.replayButton.x && mouseX <= this.replayButton.x + this.replayButton.width
+            && mouseY >= this.replayButton.y && mouseY <= this.replayButton.y + this.replayButton.height;
+
+        if (isClicked) {
+            location.reload(); // führt zurück zum Startscreen und setzt das komplette Spiel zurück
+        }
     }
 
     addObjectToMap(objects) {
@@ -218,9 +247,13 @@ class World {
     setupSoundButtonClick() {
         this.canvas.addEventListener('click', (event) => {
             const rect = this.canvas.getBoundingClientRect();
-            const mouseX = event.clientX - rect.left;
-            const mouseY = event.clientY - rect.top;
+            const scaleX = this.canvas.width / rect.width;
+            const scaleY = this.canvas.height / rect.height;
+            const mouseX = (event.clientX - rect.left) * scaleX;
+            const mouseY = (event.clientY - rect.top) * scaleY;
             this.soundButton.handleClick(mouseX, mouseY);
+            this.fullscreenButton.handleClick(mouseX, mouseY);
+            this.handleReplayButtonClick(mouseX, mouseY);
         });
     }
 

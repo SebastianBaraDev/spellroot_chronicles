@@ -19,6 +19,7 @@
     <script src="/classes/potion-bottle.class.js"></script>
     <script src="/classes/scroll-object.class.js"></script>
     <script src="/classes/sound-button.class.js"></script>
+    <script src="/classes/fullscreen-button.class.js"></script>
     <script src="/classes/enemie.class.js"></script>
     <script src="/classes/cloud.class.js"></script>
     <script src="/classes/world.class.js"></script>
@@ -27,6 +28,7 @@
     <script src="/classes/level.class.js"></script>
     <script src="/classes/endboss.class.js"></script>
     <script src="/js/levels/level1.js"></script>
+    <script src="/js/fullscreen.js"></script>
     <script src="/js/game.js"></script>
 
 </head>
@@ -34,7 +36,9 @@
 <body onload="initializeGame()">
 
     <h1>Spellroot Chronicles</h1>
-    <canvas id="gameCanvas" width="720" height="480"></canvas>
+    <div id="fullscreen">
+        <canvas id="gameCanvas" width="720" height="480"></canvas>
+    </div>
 
 </body>
 

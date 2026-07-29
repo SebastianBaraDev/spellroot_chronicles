@@ -47,7 +47,7 @@ class Endboss extends MovableObject {
         this.loadImages(this.IMAGES_WALK);
         this.loadImages(this.IMAGES_HURT);
         this.loadImages(this.IMAGES_DIE);
-        this.x = 2900; // Position the endboss further to the right
+        this.x = 3619; // Position the endboss further to the right (Level um 719px verlaengert)
         this.y = -40;
         this.speed = 0.1;
         this.height = 500;

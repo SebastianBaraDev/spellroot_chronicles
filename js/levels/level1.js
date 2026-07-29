@@ -1,7 +1,7 @@
-let level1;
-function initLevel1() {
-level1 = new Level(
+const level1 = new Level(
     [
+        new Enemie(),
+        new Enemie(),
         new Enemie(),
         new Enemie(),
         new Enemie(),
@@ -16,14 +16,14 @@ level1 = new Level(
         new Cloud(),
     ],
     createBackgrounds(),
-    createCollectables(10),
-    createPotions(5),
-    createScrolls(3)
-);}
+    createCollectables(15),
+    createPotions(7),
+    createScrolls(2)
+);
 
 function createBackgrounds() {
     let backgrounds = [];
-    for (let i = -2; i < 5; i++) {
+    for (let i = -2; i < 6; i++) {
         let isFlipped = i % 2 !== 0;
 
         backgrounds.push(new BackgroundObject('img/backgrounds/PNG/background.png', 719 * i, 0, 350));
@@ -45,7 +45,7 @@ function createCollectables(count) {
     let collectables = [];
     const startMargin = 300;
     const endMargin = 700;
-    const usableWidth = (719 * 5) - startMargin - endMargin;
+    const usableWidth = (719 * 6) - startMargin - endMargin;
     const segmentWidth = usableWidth / count;
 
     for (let i = 0; i < count; i++) {
@@ -61,7 +61,7 @@ function createPotions(count) {
     let potions = [];
     const startMargin = 300;
     const endMargin = 700;
-    const usableWidth = (719 * 5) - startMargin - endMargin;
+    const usableWidth = (719 * 6) - startMargin - endMargin;
     const segmentWidth = usableWidth / count;
 
     for (let i = 0; i < count; i++) {
@@ -77,7 +77,7 @@ function createScrolls(count) {
     let scrolls = [];
     const startMargin = 300;
     const endMargin = 700;
-    const usableWidth = (719 * 5) - startMargin - endMargin;
+    const usableWidth = (719 * 6) - startMargin - endMargin;
     const segmentWidth = usableWidth / count;
 
     for (let i = 0; i < count; i++) {

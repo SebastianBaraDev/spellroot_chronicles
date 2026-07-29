@@ -141,9 +141,9 @@ class Character extends MovableObject {
     }
 
     hit() {
-    super.hit();
-    this.hurtSound.currentTime = 0;
-    this.hurtSound.play();
-}
+        super.hit(10); // Character nimmt mehr Schaden als die Standard-Gegner
+        this.hurtSound.currentTime = 0;
+        this.hurtSound.play();
+    }
 
 }

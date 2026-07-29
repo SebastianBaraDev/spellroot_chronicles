@@ -33,7 +33,7 @@ class SoundButton extends DrawableObject {
 
         // Bild proportional in die Box einpassen (wie "object-fit: contain"),
         // damit sound-off.png (anderes Seitenverhältnis als sound-on.png) nicht verzerrt wird
-        const aspectRatio = this.img.naturalWidth / this.img.naturalHeight || 1;
+        const aspectRatio = this.img.naturalWidth / this.img.naturalHeight || 1; 
         let drawWidth = this.width;
         let drawHeight = this.width / aspectRatio;
 
@@ -45,8 +45,8 @@ class SoundButton extends DrawableObject {
         const offsetX = this.x + (this.width - drawWidth) / 2;
         const offsetY = this.y + (this.height - drawHeight) / 2;
 
-        ctx.filter = 'invert(1)'; // Bilder sind schwarz, invert(1) macht sie weiß
+        ctx.filter = 'invert(1)'; // imgs are dark, invert to make them visible on dark background
         ctx.drawImage(this.img, offsetX, offsetY, drawWidth, drawHeight);
-        ctx.filter = 'none'; // wichtig zurücksetzen, sonst wird alles Nachfolgende auch invertiert
+        ctx.filter = 'none'; // important: reset filter after drawing, otherwise it will affect other drawings
     }
 }
