@@ -1,18 +1,17 @@
-class FullscreenButton extends DrawableObject {
+class HomeButton extends DrawableObject {
     /**
-     * Creates the in-game fullscreen toggle button, positioned in the bottom-right corner.
+     * Creates the home button that returns to the start screen, positioned left of the sound button.
      * @param {number} canvasWidth - Width of the game canvas, used to position the button.
-     * @param {number} canvasHeight - Height of the game canvas, used to position the button.
      * @param {Function} onClick - Callback invoked when the button is clicked.
      */
-    constructor(canvasWidth, canvasHeight, onClick) {
+    constructor(canvasWidth, onClick) {
         super();
         this.width = 36;
         this.height = 36;
-        this.x = canvasWidth - this.width - 20;
-        this.y = canvasHeight - this.height - 20;
+        this.x = canvasWidth - 40 - 20 - this.width - 12; // sits left of the sound button, same top row
+        this.y = 22;
         this.onClick = onClick;
-        this.loadImage('img/fullscreen-btn.png');
+        this.loadImage('img/homescreen.png');
     }
 
     /**
@@ -45,7 +44,7 @@ class FullscreenButton extends DrawableObject {
     draw(ctx) {
         if (!this.img) return;
 
-        ctx.filter = 'invert(1)'; // image is black, invert(1) makes it white
+        ctx.filter = 'invert(1)'; // image is dark, invert(1) makes it visible on the dark HUD
         ctx.drawImage(this.img, this.x, this.y, this.width, this.height);
         ctx.filter = 'none';
     }

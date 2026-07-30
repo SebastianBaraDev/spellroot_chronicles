@@ -1,12 +1,12 @@
 class EndbossLevel2 extends MovableObject {
     otherDirection = true;
-    energy = 35; // 7 Treffer mit einer Flasche (je 5 Schaden) noetig
+    energy = 60; // 12 hits with a potion needed (5 damage each)
     footstepsSound = new Audio('audio/monster-footsteps.mp3');
     hurtSound = new Audio('audio/dragon-growl.mp3');
-    offset = { top: 46, bottom: 20, left: 296, right: 257 }; // proportional zur groesseren Sprite-Ausgabe skaliert
+    offset = { top: 46, bottom: 20, left: 296, right: 257 }; // scaled proportionally to the larger sprite output
 
-    groundY = -190; // an die groessere Hoehe angepasst, damit die Fuesse auf gleicher Bodenlinie bleiben
-    y = -190;
+    groundY = -170; // 20px lower than before
+    y = -170;
     speedY = 0;
     jumping = false;
     attacking = false;
@@ -72,6 +72,10 @@ class EndbossLevel2 extends MovableObject {
         'img/enemies/3_ORK/ORK_03_DIE_009.png',
     ];
 
+    /**
+     * Creates the level 2 endboss at the far end of the level and starts its animation,
+     * jump loop and attack loop.
+     */
     constructor() {
         super().loadImage(this.IMAGES_WALK[0]);
         this.loadImages(this.IMAGES_WALK);
@@ -91,6 +95,11 @@ class EndbossLevel2 extends MovableObject {
         this.footstepsSound.volume = 0.3;
     }
 
+    /**
+     * Starts the endboss's movement loop, its walk/jump/attack/hurt/death animation loop
+     * and its footsteps sound loop.
+     * @returns {void}
+     */
     animate() {
         setInterval(() => {
             if (!this.isDead() && !this.attacking) this.moveLeft();
@@ -113,9 +122,12 @@ class EndbossLevel2 extends MovableObject {
         setInterval(() => this.handleFootstepsSound(), 300);
     }
 
-    // Eigene, in sich geschlossene Sprungphysik (kleinere Sprungkraft als beim regulaeren
-    // Level-2-Gegner) - aus denselben Gruenden wie bei EnemieLevel2 nicht auf
-    // MovableObject.isAboveGround()/applyGravity() gestuetzt.
+    /**
+     * Runs the endboss's own self-contained jump physics loop (smaller jump force
+     * than the regular level 2 enemy) - not built on
+     * MovableObject.isAboveGround()/applyGravity(), for the same reasons as EnemieLevel2.
+     * @returns {void}
+     */
     startJumpLoop() {
         setInterval(() => {
             if (!this.isDead() && !this.jumping && !this.attacking) {
@@ -129,21 +141,24 @@ class EndbossLevel2 extends MovableObject {
             this.y -= this.speedY;
             this.speedY -= this.acceleration;
 
-            if (this.y >= this.groundY) {
-                this.y = this.groundY;
-                this.speedY = 0;
-                this.jumping = false;
-            }
+            this.landOnGround(this.groundY);
         }, 1000 / 25);
     }
 
+    /**
+     * Kicks off a single small jump by giving the endboss an initial upward velocity.
+     * @returns {void}
+     */
     startJump() {
         this.jumping = true;
-        this.speedY = 8; // kleiner Sprung
+        this.speedY = 8; // small jump
     }
 
-    // Periodischer Angriffsmodus mit der Axt: Bewegung pausiert waehrend der
-    // Attack-Animation, damit der Axthieb glaubwuerdig wirkt.
+    /**
+     * Runs the periodic axe attack mode: movement pauses during the attack
+     * animation so the axe swing looks believable.
+     * @returns {void}
+     */
     startAttackLoop() {
         setInterval(() => {
             if (!this.isDead() && !this.attacking && !this.jumping) {
@@ -156,6 +171,11 @@ class EndbossLevel2 extends MovableObject {
         }, 4000 + Math.random() * 3000);
     }
 
+    /**
+     * Plays or pauses the footsteps sound depending on whether the endboss is
+     * currently visible on screen and still alive.
+     * @returns {void}
+     */
     handleFootstepsSound() {
         if (!this.world) return;
 
@@ -170,6 +190,10 @@ class EndbossLevel2 extends MovableObject {
         isVisible ? this.footstepsSound.play() : this.footstepsSound.pause();
     }
 
+    /**
+     * Applies a hit and plays the endboss's growl sound.
+     * @returns {void}
+     */
     hit() {
         super.hit();
         this.hurtSound.currentTime = 0;

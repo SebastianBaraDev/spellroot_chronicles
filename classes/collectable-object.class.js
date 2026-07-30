@@ -1,4 +1,7 @@
 class CollectableObject extends MovableObject {
+    /**
+     * Creates a collectible crystal at a random position within the level's crystal band.
+     */
     constructor() {
         super();
         this.loadImage('img/crystal.png');
@@ -7,6 +10,4 @@ class CollectableObject extends MovableObject {
         this.width = 50;
         this.height = 50;
     }
-
-    
 }

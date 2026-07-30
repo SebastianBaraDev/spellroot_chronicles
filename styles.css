@@ -188,3 +188,19 @@ canvas {
         -webkit-user-drag: none;
     }
 }
+
+#impressum-link {
+    position: fixed;
+    right: 12px;
+    bottom: 8px;
+    z-index: 100; /* liegt ueber dem mobilen Fullscreen-Overlay (z-index: 50) */
+    color: #fff;
+    opacity: 0.6;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 13px;
+    text-decoration: none;
+}
+
+#impressum-link:hover {
+    opacity: 1;
+}

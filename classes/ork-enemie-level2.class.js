@@ -1,13 +1,13 @@
 class OrkEnemieLevel2 extends MovableObject {
-    height = 180;
-    width = 300;
-    y = 250; // gleiche Standflaeche wie die regulaeren Level-1-Gegner
+    height = 350;
+    width = 583; // scaled proportionally from 300x180 to a height of 350
+    y = 105; // 15px lower than the previous value, still a bit higher than the original 120
     otherDirection = true;
     energy = 5;
     attacking = false;
-    offset = { top: 18, bottom: 6, left: 98, right: 88 }; // Sprite-Seitenverhaeltnis entspricht dem des Level-1-Gegners
+    offset = { top: 35, bottom: 12, left: 191, right: 171 }; // scaled proportionally (factor ~1.94) from the level 1 enemy offset
 
-    ATTACK_RANGE = 220; // Abstand, ab dem der Ork mit dem Hammer anzugreifen versucht
+    ATTACK_RANGE = 220; // distance at which the ork tries to attack with the hammer
 
     IMAGES_RUN = [
         'img/enemies/1_ORK/ORK_01_RUN_000.png',
@@ -46,6 +46,9 @@ class OrkEnemieLevel2 extends MovableObject {
         'img/enemies/1_ORK/ORK_01_DIE_009.png',
     ];
 
+    /**
+     * Creates a normal-size level 2 ork enemy at a random position/speed and starts its animation.
+     */
     constructor() {
         super().loadImage('./img/enemies/1_ORK/ORK_01_RUN_000.png');
         this.loadImages(this.IMAGES_RUN);
@@ -57,8 +60,13 @@ class OrkEnemieLevel2 extends MovableObject {
         this.animate();
     }
 
+    /**
+     * Starts the ork's movement loop, its run/attack/death animation loop and its
+     * proximity check for the hammer attack. No jumping - the ork stays on the
+     * ground and only pauses during the hammer attack.
+     * @returns {void}
+     */
     animate() {
-        // Kein Sprung - der Ork bleibt am Boden und pausiert nur waehrend der Hammer-Attacke
         setInterval(() => {
             if (!this.isDead() && !this.attacking) this.moveLeft();
         }, 1000 / 60);
@@ -68,16 +76,17 @@ class OrkEnemieLevel2 extends MovableObject {
                 this.playDeathAnimation();
             } else if (this.attacking) {
                 this.playAnimation(this.IMAGES_ATTACK);
-            } else {
-                this.playAnimation(this.IMAGES_RUN);
-            }
+            } else {this.playAnimation(this.IMAGES_RUN);}
         }, 100);
 
         setInterval(() => this.checkAttackRange(), 200);
     }
 
-    // Sobald der Character nah genug ist, wechselt der Ork in den Hammer-Angriffsmodus
-    // und bewegt sich waehrenddessen nicht weiter.
+    /**
+     * Switches the ork into hammer attack mode (and pauses its movement) as soon
+     * as the character comes within ATTACK_RANGE.
+     * @returns {void}
+     */
     checkAttackRange() {
         if (!this.world || this.isDead()) return;
 

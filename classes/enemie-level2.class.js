@@ -1,13 +1,13 @@
 class EnemieLevel2 extends MovableObject {
     height = 120;
     width = 200;
-    groundY = 310; // Grundlinie, an 2/3-Groesse angepasst (gleiche Standflaeche wie Level-1-Gegner)
+    groundY = 310; // ground line, adjusted to 2/3 size (same footprint as level 1 enemies)
     y = 310;
     otherDirection = true;
     energy = 5;
     speedY = 0;
     jumping = false;
-    offset = { top: 12, bottom: 4, left: 65, right: 59 }; // proportional (2/3) vom Level-1-Offset skaliert
+    offset = { top: 12, bottom: 4, left: 65, right: 59 }; // scaled proportionally (2/3) from the level 1 offset
 
     IMAGES_RUN = [
         'img/enemies/_PNG/3/Ent_03__RUN_000.png',
@@ -46,6 +46,10 @@ class EnemieLevel2 extends MovableObject {
         'img/enemies/_PNG/3/Ent_03__DIE_009.png',
     ];
 
+    /**
+     * Creates a halved-size level 2 enemy at a random position/speed and starts its
+     * movement and periodic jump behavior.
+     */
     constructor() {
         super().loadImage('./img/enemies/_PNG/3/Ent_03__RUN_000.png');
         this.loadImages(this.IMAGES_RUN);
@@ -59,6 +63,10 @@ class EnemieLevel2 extends MovableObject {
         this.startJumpLoop();
     }
 
+    /**
+     * Starts the enemy's movement loop and its run/jump/death animation loop.
+     * @returns {void}
+     */
     animate() {
         setInterval(() => {
             if (!this.isDead()) this.moveLeft();
@@ -75,9 +83,12 @@ class EnemieLevel2 extends MovableObject {
         }, 100);
     }
 
-    // Eigene, in sich geschlossene Sprungphysik - MovableObject.isAboveGround()/applyGravity()
-    // sind fest auf die y-Position des Characters (y < 130) zugeschnitten und passen nicht
-    // zur Bodenhoehe der halbierten Level-2-Gegner (groundY = 320).
+    /**
+     * Runs the enemy's own self-contained jump physics loop. Not built on
+     * MovableObject.isAboveGround()/applyGravity(), since those are hardcoded to the
+     * character's y-position (y < 130) and don't match this enemy's ground line.
+     * @returns {void}
+     */
     startJumpLoop() {
         setInterval(() => {
             if (!this.isDead() && !this.jumping) {
@@ -91,16 +102,16 @@ class EnemieLevel2 extends MovableObject {
             this.y -= this.speedY;
             this.speedY -= this.acceleration;
 
-            if (this.y >= this.groundY) {
-                this.y = this.groundY;
-                this.speedY = 0;
-                this.jumping = false;
-            }
+            this.landOnGround(this.groundY);
         }, 1000 / 25);
     }
 
+    /**
+     * Kicks off a single jump by giving the enemy an initial upward velocity.
+     * @returns {void}
+     */
     startJump() {
         this.jumping = true;
-        this.speedY = 22; // eine Ecke hoeher als vorher, aber noch unter dem Character
+        this.speedY = 22; // a bit higher than before, but still below the character
     }
 }

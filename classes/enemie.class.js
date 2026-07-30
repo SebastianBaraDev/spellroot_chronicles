@@ -4,7 +4,7 @@ class Enemie extends MovableObject {
     y = 250;
     otherDirection = true; // Assuming enemies face left by default
     energy = 5;
-    offset = { top: 18, bottom: 6, left: 98, right: 88 }; // top mit etwas Puffer, da die reine Bounding-Box auch schwache Schatten/Glow-Pixel mitgezaehlt hat
+    offset = { top: 18, bottom: 6, left: 98, right: 88 }; // top has extra buffer, since the raw bounding box also counted faint shadow/glow pixels
     IMAGES_RUN = [
             'img/enemies/_PNG/1/Ent_01__RUN_000.png',
             'img/enemies/_PNG/1/Ent_01__RUN_001.png',
@@ -30,6 +30,9 @@ class Enemie extends MovableObject {
             'img/enemies/_PNG/1/Ent_01__DIE_009.png',
         ];  
 
+    /**
+     * Creates a standard level 1 enemy at a random position/speed and starts its animation.
+     */
     constructor() {
         super().loadImage('./img/enemies/_PNG/1/Ent_01__RUN_000.png');
         this.loadImages(this.IMAGES_RUN);
@@ -40,7 +43,10 @@ class Enemie extends MovableObject {
         this.animate();
     }
 
-
+    /**
+     * Starts the enemy's movement loop and its run/death animation loop.
+     * @returns {void}
+     */
     animate() {
         setInterval(() => {
             if (!this.isDead()) this.moveLeft();

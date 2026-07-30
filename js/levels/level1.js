@@ -1,4 +1,4 @@
-const LEVEL_WIDTH = 719 * 7; // muss zu level.class.js level_end_x passen
+const LEVEL_WIDTH = 719 * 7; // must match level_end_x in level.class.js
 
 const level1 = new Level(
     createEnemies(6),
@@ -15,6 +15,10 @@ const level1 = new Level(
     createScrolls(2)
 );
 
+/**
+ * Builds the repeating, alternately-flipped background/land/rock layers for level 1.
+ * @returns {BackgroundObject[]} All background objects for level 1.
+ */
 function createBackgrounds() {
     let backgrounds = [];
     for (let i = -2; i < 7; i++) {
@@ -35,17 +39,22 @@ function createBackgrounds() {
     return backgrounds;
 }
 
+/**
+ * Spreads the given number of regular enemies evenly across level 1 and appends the endboss.
+ * @param {number} count - How many regular enemies to place.
+ * @returns {(Enemie|Endboss)[]} The regular enemies followed by the endboss.
+ */
 function createEnemies(count) {
     let enemies = [];
-    const startMargin = 900; // Abstand zum Levelstart, damit kein Gegner direkt beim Laden neben dem Character steht
-    const endMargin = 900; // Abstand zum Levelende, damit kein Gegner zu nah am Endboss auftaucht - Gegner verteilen sich jetzt weiter
+    const startMargin = 900; // distance from level start, so no enemy stands right next to the character on load
+    const endMargin = 900; // distance from level end, so no enemy appears too close to the endboss - enemies now spread further
     const usableWidth = LEVEL_WIDTH - startMargin - endMargin;
     const segmentWidth = usableWidth / count;
 
     for (let i = 0; i < count; i++) {
         let enemy = new Enemie();
-        // Zufallsposition bleibt auf die erste Haelfte des Segments beschraenkt,
-        // damit zwischen zwei Gegnern immer mindestens ein halbes Segment Platz ist
+        // random position stays within the first half of the segment,
+        // so there's always at least half a segment of space between two enemies
         enemy.x = startMargin + i * segmentWidth + Math.random() * (segmentWidth * 0.5);
         enemies.push(enemy);
     }
@@ -54,10 +63,15 @@ function createEnemies(count) {
     return enemies;
 }
 
+/**
+ * Spreads the given number of collectible crystals evenly across level 1.
+ * @param {number} count - How many crystals to place.
+ * @returns {CollectableObject[]} The placed crystals.
+ */
 function createCollectables(count) {
     let collectables = [];
     const startMargin = 300;
-    const endMargin = 1700; // vergroessert, damit Kristalle nicht mehr hinter dem Endboss auftauchen
+    const endMargin = 1700; // increased so crystals no longer appear behind the endboss
     const usableWidth = LEVEL_WIDTH - startMargin - endMargin;
     const segmentWidth = usableWidth / count;
 
@@ -70,10 +84,15 @@ function createCollectables(count) {
     return collectables;
 }
 
+/**
+ * Spreads the given number of throwable potions evenly across level 1.
+ * @param {number} count - How many potions to place.
+ * @returns {ThrowableObject[]} The placed potions.
+ */
 function createPotions(count) {
     let potions = [];
     const startMargin = 300;
-    const endMargin = 1700; // vergroessert, damit Flaschen nicht mehr hinter dem Endboss auftauchen
+    const endMargin = 1700; // increased so potions no longer appear behind the endboss
     const usableWidth = LEVEL_WIDTH - startMargin - endMargin;
     const segmentWidth = usableWidth / count;
 
@@ -86,10 +105,15 @@ function createPotions(count) {
     return potions;
 }
 
+/**
+ * Spreads the given number of healing scrolls evenly across level 1.
+ * @param {number} count - How many scrolls to place.
+ * @returns {ScrollObject[]} The placed scrolls.
+ */
 function createScrolls(count) {
     let scrolls = [];
     const startMargin = 300;
-    const endMargin = 1700; // vergroessert, damit Schriftrollen nicht mehr hinter dem Endboss auftauchen
+    const endMargin = 1700; // increased so scrolls no longer appear behind the endboss
     const usableWidth = LEVEL_WIDTH - startMargin - endMargin;
     const segmentWidth = usableWidth / count;
 

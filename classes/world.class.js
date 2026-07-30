@@ -1,5 +1,5 @@
 class World {
-    character = new Character();
+    character;
     level = level1;
     statusBar = new StatusBar();
     canvas;
@@ -9,52 +9,85 @@ class World {
     throwableObjects = [];
     collectableBar = new CollectableBar();
     potionBar = new PotionBar();
-    crystalSound = new Audio('audio/coin-collect.mp3');
-    scrollSound = new Audio('audio/item-pickup.mp3');
-    bottleCrashSound = new Audio('audio/bottle-crash.mp3');
-    potionSound = new Audio('audio/bottle-collect.mp3');
-    stompSound = new Audio('audio/enemy-hit.mp3');
-    gameOverSound = new Audio('audio/game-over.mp3');
+    sounds = new SoundManager();
+    collisions = new CollisionManager(this);
     gameOverTriggered = false;
     replayButtonImage = new Image();
     replayButton = null;
-    backgroundMusic = new Audio('audio/bg-music.mp3');
-    winSound = new Audio('audio/win-sound.mp3');
     levelCompleteTriggered = false;
     nextLevelSignImage = new Image();
     nextLevelSign = null;
     stopped = false;
     isLastLevel = false;
+    levelStartTime = new Date().getTime();
+    SPAWN_PROTECTION_MS = 1500; // grace period at the start of every level - the character can't take damage yet
 
-    constructor(canvas, keyboard, level = level1, isLastLevel = false) {
+    /**
+     * Builds the game world for one level: creates the character, HUD buttons and
+     * sounds, wires up the level's objects, then starts the render loop and
+     * collision-check intervals.
+     * @param {HTMLCanvasElement} canvas - The game canvas to render into.
+     * @param {Keyboard} keyboard - The shared keyboard input state.
+     * @param {Level} [level] - The level to play. Defaults to level1.
+     * @param {boolean} [isLastLevel] - Whether completing this level should show "THE END" instead of a next-level sign. Defaults to false.
+     * @param {string} [characterId] - Which playable character sprite set to use. Defaults to 'wizard2'.
+     */
+    constructor(canvas, keyboard, level = level1, isLastLevel = false, characterId = 'wizard2') {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.keyboard = keyboard;
         this.level = level;
         this.isLastLevel = isLastLevel;
+        this.character = new Character(characterId);
         this.replayButtonImage.src = 'img/replay-btn.png';
         this.nextLevelSignImage.src = 'img/btn-next-level.png';
         this.soundButton = new SoundButton(this.canvas.width, (isMuted) => this.applyMuteToAllSounds(isMuted));
+        this.applyMuteToAllSounds(this.soundButton.isMuted); // apply the persisted mute preference right away, not just on the next toggle
         this.fullscreenButton = new FullscreenButton(this.canvas.width, this.canvas.height, () => toggleFullscreen());
+        this.homeButton = new HomeButton(this.canvas.width, () => goToHomescreen());
         this.draw();
         this.setWorld();
         this.run();
-        this.backgroundMusic.loop = true;
-        this.backgroundMusic.volume = 0.3;
-        this.backgroundMusic.play().catch(() => {}); // if browser blocks autoplay, catch the error to prevent console errors
+        this.sounds.startBackgroundMusic();
         this.setupSoundButtonClick();
     }
 
+    /**
+     * Backreferences this World onto the character and every enemy, so they can
+     * read shared state (keyboard, camera, other objects) without it being passed around.
+     * @returns {void}
+     */
     setWorld() {
         this.character.world = this;
         this.level.enemies.forEach(enemy => enemy.world = this);
     }
 
+    /**
+     * Renders one full frame: background, game objects, HUD, and either the
+     * game-over or level-complete overlay if applicable. Reschedules itself via
+     * requestAnimationFrame until stop() is called.
+     * @returns {void}
+     */
     draw() {
-        if (this.stopped) return; // altes World-Objekt nach einem Levelwechsel nicht mehr weiterzeichnen
+        if (this.stopped) return; // stop drawing the old World object after a level change
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear the canvas before drawing
 
+        this.drawLevelObjects();
+        this.drawHUD();
+        this.checkGameEndState();
+
+        if (!this.stopped) {
+            requestAnimationFrame(() => this.draw()); // Call draw again on the next frame
+        }
+    }
+
+    /**
+     * Draws every camera-relative object for the current frame: background, clouds,
+     * pickups, enemies, throwables and the character. Restores the camera transform afterwards.
+     * @returns {void}
+     */
+    drawLevelObjects() {
         this.ctx.translate(this.camera_x, 0); // Move the camera
 
         this.addObjectToMap(this.level.backgroundObjects);
@@ -64,41 +97,59 @@ class World {
         this.addObjectToMap(this.level.collectableObject);
         this.addObjectToMap(this.level.potionObjects);
         this.addObjectToMap(this.level.scrollObjects);
+        this.addObjectToMap(this.level.attackBookObjects);
 
         this.addObjectToMap(this.level.enemies);
         this.addObjectToMap(this.throwableObjects);
         this.addToMap(this.character);
 
         this.ctx.translate(-this.camera_x, 0); // Move the camera back to the original position
+    }
 
+    /**
+     * Draws the fixed-on-screen HUD: status bar, item bars, and the sound/home/fullscreen buttons.
+     * @returns {void}
+     */
+    drawHUD() {
         this.addToMap(this.statusBar); // Statusbar fixed on screen (outside camera translate)
         this.addToMap(this.collectableBar); // Collectable bar fixed on screen (outside camera translate)
         this.addToMap(this.potionBar);
         this.addToMap(this.soundButton);
+        this.addToMap(this.homeButton);
         if (!isMobileLayout()) {
             this.addToMap(this.fullscreenButton); // on mobile the fullscreen button is not displayed, so it doesn't need to be drawn
         }
+    }
 
+    /**
+     * Checks whether the character or the endboss has died this frame, and if so
+     * draws the corresponding Game Over / level-complete overlay.
+     * @returns {void}
+     */
+    checkGameEndState() {
         if (this.character.isDead()) {
             this.handleGameOver();
         } else if (this.getEndboss()?.isDead()) {
             this.handleLevelComplete();
         }
-
-        if (!this.stopped) {
-            requestAnimationFrame(() => this.draw()); // Call draw again on the next frame
-        }
     }
 
+    /**
+     * Finds the endboss (level 1 or level 2 variant) among this level's enemies.
+     * @returns {(Endboss|EndbossLevel2|undefined)} The endboss, or undefined if not found.
+     */
     getEndboss() {
         return this.level.enemies.find(enemy => enemy instanceof Endboss || enemy instanceof EndbossLevel2);
     }
 
+    /**
+     * Draws the Game Over screen and replay button, playing the game-over sound once.
+     * @returns {void}
+     */
     handleGameOver() {
         if (!this.gameOverTriggered) {
             this.gameOverTriggered = true;
-            this.gameOverSound.currentTime = 0;
-            this.gameOverSound.play();
+            this.sounds.playGameOver();
         }
 
         this.ctx.font = '64px Roots';
@@ -107,10 +158,21 @@ class World {
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2);
 
+        this.drawReplayButton(this.canvas.height / 2 + 40);
+    }
+
+    /**
+     * Draws the (inverted) replay button centered horizontally at the given y position
+     * and remembers its bounds for click/hover detection. Shared by the Game Over
+     * screen and the "THE END" screen.
+     * @param {number} y - Top y position to draw the button at.
+     * @returns {void}
+     */
+    drawReplayButton(y) {
         const buttonSize = 80;
         this.replayButton = {
             x: this.canvas.width / 2 - buttonSize / 2,
-            y: this.canvas.height / 2 + 40,
+            y: y,
             width: buttonSize,
             height: buttonSize,
         };
@@ -119,24 +181,43 @@ class World {
         this.ctx.filter = 'none';
     }
 
+    /**
+     * Checks whether the given canvas coordinates are over the replay button (visible on
+     * Game Over, and on the "THE END" screen after beating the last level).
+     * @param {number} mouseX - Mouse X position in canvas coordinates.
+     * @param {number} mouseY - Mouse Y position in canvas coordinates.
+     * @returns {boolean} true if the point is inside the replay button's bounds.
+     */
     isReplayButtonHovered(mouseX, mouseY) {
-        if (!this.character.isDead() || !this.replayButton) return false;
+        const isReplayVisible = this.character.isDead() || (this.isLastLevel && this.getEndboss()?.isDead());
+        if (!isReplayVisible || !this.replayButton) return false;
 
         return mouseX >= this.replayButton.x && mouseX <= this.replayButton.x + this.replayButton.width
             && mouseY >= this.replayButton.y && mouseY <= this.replayButton.y + this.replayButton.height;
     }
 
+    /**
+     * Handles a click on the replay button: on both Game Over and "THE END" it
+     * returns to the start screen.
+     * @param {number} mouseX - Mouse X position in canvas coordinates.
+     * @param {number} mouseY - Mouse Y position in canvas coordinates.
+     * @returns {void}
+     */
     handleReplayButtonClick(mouseX, mouseY) {
-        if (this.isReplayButtonHovered(mouseX, mouseY)) {
-            location.reload(); // reset the game and move to the start screen
-        }
+        if (!this.isReplayButtonHovered(mouseX, mouseY)) return;
+
+        goToHomescreen(); // in game.js: returns to the start screen, from Game Over and THE END alike
     }
 
+    /**
+     * Draws the level-complete overlay: "THE END" on the last level, otherwise
+     * "LEVEL DONE" plus a clickable next-level sign. Plays the win sound once.
+     * @returns {void}
+     */
     handleLevelComplete() {
         if (!this.levelCompleteTriggered) {
             this.levelCompleteTriggered = true;
-            this.winSound.currentTime = 0;
-            this.winSound.play().catch(() => {});
+            this.sounds.playWinSound();
         }
 
         if (this.isLastLevel) {
@@ -144,7 +225,8 @@ class World {
             this.ctx.fillStyle = 'white';
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
-            this.ctx.fillText('THE END', this.canvas.width / 2, this.canvas.height / 2);
+            this.ctx.fillText('THE END', this.canvas.width / 2, this.canvas.height / 2 - 20);
+            this.drawReplayButton(this.canvas.height / 2 + 40);
             return;
         }
 
@@ -155,7 +237,7 @@ class World {
         this.ctx.fillText('LEVEL DONE', this.canvas.width / 2, this.canvas.height / 2 - 30);
 
         const signWidth = 220;
-        const signHeight = 147; // Seitenverhaeltnis des Next-Level-Schilds (768x512)
+        const signHeight = 147; // aspect ratio of the next-level sign (768x512)
         this.nextLevelSign = {
             x: this.canvas.width / 2 - signWidth / 2,
             y: this.canvas.height / 2 + 5,
@@ -165,6 +247,12 @@ class World {
         this.ctx.drawImage(this.nextLevelSignImage, this.nextLevelSign.x, this.nextLevelSign.y, signWidth, signHeight);
     }
 
+    /**
+     * Checks whether the given canvas coordinates are over the (only-visible-after-victory) next-level sign.
+     * @param {number} mouseX - Mouse X position in canvas coordinates.
+     * @param {number} mouseY - Mouse Y position in canvas coordinates.
+     * @returns {boolean} true if the point is inside the next-level sign's bounds.
+     */
     isNextLevelSignHovered(mouseX, mouseY) {
         if (!this.getEndboss()?.isDead() || !this.nextLevelSign) return false;
 
@@ -172,23 +260,43 @@ class World {
             && mouseY >= this.nextLevelSign.y && mouseY <= this.nextLevelSign.y + this.nextLevelSign.height;
     }
 
+    /**
+     * Transitions to the next level if the next-level sign was clicked.
+     * @param {number} mouseX - Mouse X position in canvas coordinates.
+     * @param {number} mouseY - Mouse Y position in canvas coordinates.
+     * @returns {void}
+     */
     handleNextLevelSignClick(mouseX, mouseY) {
         if (this.isNextLevelSignHovered(mouseX, mouseY)) {
-            goToNextLevel(); // in game.js: baut ein frisches World-Objekt mit level2 auf
+            goToNextLevel(); // in game.js: builds a fresh World object with level2
         }
     }
 
+    /**
+     * Stops this World's render loop and intervals and pauses its sounds, so it can
+     * be safely discarded when switching to a new level or restarting.
+     * @returns {void}
+     */
     stop() {
         this.stopped = true;
         (this.intervalIds || []).forEach(id => clearInterval(id));
-        this.backgroundMusic.pause();
-        this.winSound.pause();
+        this.sounds.stop();
     }
 
+    /**
+     * Draws every object in the given list.
+     * @param {DrawableObject[]} objects - Objects to draw.
+     * @returns {void}
+     */
     addObjectToMap(objects) {
         objects.forEach(obj => this.addToMap(obj));
     }
 
+    /**
+     * Draws a single object, flipping it horizontally first if it faces the other direction.
+     * @param {DrawableObject} mo - The object to draw.
+     * @returns {void}
+     */
     addToMap(mo) {
         if (!mo.img) return;
 
@@ -203,6 +311,11 @@ class World {
         mo.drawFrame(this.ctx);
     }
 
+    /**
+     * Sets up a canvas transform that mirrors the given object horizontally around its own position.
+     * @param {DrawableObject} mo - The object to flip.
+     * @returns {void}
+     */
     flipImage(mo){
             this.ctx.save();
             this.ctx.translate(mo.x + mo.width, mo.y);
@@ -210,98 +323,38 @@ class World {
     }
 
     
-    checkCollisions() {
-        this.level.enemies.forEach(enemy => {
-            const isCollidingNow = this.character.isColliding(enemy);
-            const wasCollidingBefore = enemy.wasColliding || false;
-            enemy.wasColliding = isCollidingNow; // Zustand fuer den naechsten Frame merken
-
-            if (!isCollidingNow) return;
-            if (enemy.isDead()) return; // Skip collision if enemy is dead
-
-            // Nur im allerersten Kontakt-Frame entscheiden, ob es ein Stomp war - das macht die
-            // Erkennung unabhaengig davon, wie tief der Charakter durch einen grossen Physik-Tick
-            // schon in den Gegner "hineingefallen" ist.
-            if (!wasCollidingBefore && this.isStompOnEnemy(enemy)) {
-                this.stompEnemy(enemy);
-                return;
-            }
-
-            if (!this.character.isHurt()) { // Only hit if the character is not already hurt
-                this.character.hit();
-                this.statusBar.setPercentage(this.character.energy);
-            }
-        });
-    }
-
-    getCharacterBottom() {
-        return this.character.y + this.character.height - this.character.offset.bottom;
-    }
-
-    isStompOnEnemy(enemy) {
-        const characterBottom = this.getCharacterBottom();
-        const enemyTop = enemy.y + enemy.offset.top;
-        const enemyBottom = enemy.y + enemy.height - enemy.offset.bottom;
-        const enemyCenterY = (enemyTop + enemyBottom) / 2;
-
-        // Im Moment des ersten Kontakts: stehen die Fuesse noch oberhalb der Gegner-Mitte?
-        // Das reicht als Stomp - auch eine Beruehrung mit der Fussspitze zaehlt, solange sie von oben kommt.
-        return characterBottom < enemyCenterY;
-    }
-
-    stompEnemy(enemy) {
-        enemy.hit();
-        this.stompSound.currentTime = 0;
-        this.stompSound.play();
-        if (enemy.isDead()) this.scheduleEnemyRemoval(enemy);
-        this.character.speedY = 15; // kleiner Abpraller nach oben
-    }
-
-    checkCollectables() {
-    this.level.collectableObject.forEach(crystal => {
-        if (crystal.img && this.character.isColliding(crystal)) {
-            crystal.img = null;
-            this.collectableBar.count++;
-            this.crystalSound.currentTime = 0; // Reset the sound to the beginning
-            this.crystalSound.play();
-        }
-    });
-    }
-
-    checkPotions() {
-        this.level.potionObjects.forEach(potion => {
-            if (potion.img && this.character.isColliding(potion)) {
-                potion.img = null;
-                this.potionBar.count++;
-                this.potionSound.currentTime = 0;
-                this.potionSound.play();
-            }
-        });
-    }
-
-    checkScrolls() {
-        this.level.scrollObjects.forEach(scroll => {
-            if (scroll.img && this.character.isColliding(scroll)) {
-                scroll.img = null;
-                this.character.energy = Math.min(this.character.energy + 25, 100);
-                this.statusBar.setPercentage(this.character.energy);
-                this.scrollSound.currentTime = 0; // Reset the sound to the beginning
-                this.scrollSound.play();
-            }
-        });
-    }
-
+    /**
+     * Starts all of this World's recurring collision-check intervals and remembers
+     * their IDs so stop() can clear them later.
+     * @returns {void}
+     */
     run() {
-        // IDs merken, damit stop() sie beim Levelwechsel beenden kann
+        const collisions = this.collisions;
+        // remember the IDs so stop() can clear them on a level change
         this.intervalIds = [
-            setInterval(() => this.checkCollisions(), 1000 / 60),
-            setInterval(() => this.checkCollectables(), 200),
-            setInterval(() => this.checkPotions(), 200),
-            setInterval(() => this.checkScrolls(), 200),
-            setInterval(() => this.checkThrowableCollisions(), 200),
+            setInterval(() => collisions.checkCollisions(), 1000 / 60),
+            setInterval(() => collisions.checkCollectables(), 200),
+            setInterval(() => collisions.checkPotions(), 200),
+            setInterval(() => collisions.checkScrolls(), 200),
+            setInterval(() => collisions.checkAttackBooks(), 200),
+            setInterval(() => collisions.checkThrowableCollisions(), 200),
         ];
     }
 
+    /**
+     * Called by the character when it attacks: delegates to the collision manager,
+     * which damages every living enemy within range.
+     * @returns {void}
+     */
+    handleCharacterAttack() {
+        this.collisions.handleCharacterAttack();
+    }
+
+    /**
+     * Throws a potion from the character's position in the direction it's facing,
+     * if it's carrying at least one.
+     * @returns {void}
+     */
     throwPotion() {
         if (this.potionBar.count <= 0) return;
 
@@ -313,36 +366,15 @@ class World {
         this.potionBar.count--;
     }
 
-   checkThrowableCollisions() {
-        this.throwableObjects.forEach(potion => {
-            this.level.enemies.forEach(enemy => {
-                if (!potion.img || !potion.isColliding(enemy)) return;
-                if (enemy.isDead()) return; // toter Gegner nimmt keinen Schaden/Sound mehr
-
-                enemy.hit();
-                potion.img = null;
-                this.bottleCrashSound.currentTime = 0; // Reset the sound to the beginning
-                this.bottleCrashSound.play();
-                if (enemy.isDead()) this.scheduleEnemyRemoval(enemy);
-            });
-        });
-    }
-
-    scheduleEnemyRemoval(enemy) {
-        if (enemy instanceof Endboss || enemy instanceof EndbossLevel2) return; // Do not remove the endboss
-
-        if (enemy.removalScheduled) return;
-        enemy.removalScheduled = true;
-
-        setTimeout(() => {
-            this.level.enemies = this.level.enemies.filter(e => e !== enemy);
-        }, enemy.IMAGES_DIE.length * 100); // wait for the die animation to finish before removing the enemy
-    }
-
+    /**
+     * Wires up the canvas's click and mousemove listeners for all HUD buttons and overlays.
+     * @returns {void}
+     */
     setupSoundButtonClick() {
         this.canvas.addEventListener('click', (event) => {
             const { mouseX, mouseY } = this.getCanvasMousePosition(event);
             this.soundButton.handleClick(mouseX, mouseY);
+            this.homeButton.handleClick(mouseX, mouseY);
             if (!isMobileLayout()) {
                 this.fullscreenButton.handleClick(mouseX, mouseY);
             }
@@ -356,6 +388,11 @@ class World {
         });
     }
 
+    /**
+     * Converts a mouse event's page coordinates into canvas-space coordinates.
+     * @param {MouseEvent} event - The mouse event to convert.
+     * @returns {{mouseX: number, mouseY: number}} Mouse position in canvas coordinates.
+     */
     getCanvasMousePosition(event) {
         const rect = this.canvas.getBoundingClientRect();
         const scaleX = this.canvas.width / rect.width;
@@ -367,8 +404,15 @@ class World {
         };
     }
 
+    /**
+     * Updates the canvas cursor style depending on whether it's hovering any clickable HUD element.
+     * @param {number} mouseX - Mouse X position in canvas coordinates.
+     * @param {number} mouseY - Mouse Y position in canvas coordinates.
+     * @returns {void}
+     */
     updateCursor(mouseX, mouseY) {
         const isOverButton = this.soundButton.isClicked(mouseX, mouseY)
+            || this.homeButton.isClicked(mouseX, mouseY)
             || (!isMobileLayout() && this.fullscreenButton.isClicked(mouseX, mouseY))
             || this.isReplayButtonHovered(mouseX, mouseY)
             || this.isNextLevelSignHovered(mouseX, mouseY);
@@ -376,26 +420,24 @@ class World {
         this.canvas.style.cursor = isOverButton ? 'pointer' : 'default';
     }
 
+    /**
+     * Applies the given mute state to every sound effect, the background music and
+     * (if present) the endboss's sounds.
+     * @param {boolean} isMuted - Whether all sounds should be muted.
+     * @returns {void}
+     */
     applyMuteToAllSounds(isMuted) {
         const endboss = this.level.enemies.find(enemy => enemy instanceof Endboss || enemy instanceof EndbossLevel2);
 
-        const sounds = [
-            this.backgroundMusic,
-            this.crystalSound,
-            this.scrollSound,
-            this.bottleCrashSound,
+        const extraSounds = [
             this.character.walkingSound,
             this.character.jumpSound,
             this.character.hurtSound,
-            this.potionSound,
-            this.stompSound,
-            this.gameOverSound,
-            this.winSound,
             endboss ? endboss.footstepsSound : null,
             endboss ? endboss.hurtSound : null,
         ];
 
-        sounds.filter(sound => sound).forEach(sound => sound.muted = isMuted);
+        this.sounds.applyMute(isMuted, extraSounds);
     }
 
 }

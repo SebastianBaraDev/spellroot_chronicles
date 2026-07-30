@@ -4,7 +4,11 @@ class ThrowableObject extends MovableObject {
     speedX = 10;
     rotationAngle = 45;
 
-
+    /**
+     * Creates a throwable potion bottle.
+     * @param {number} [x] - X position it is thrown from. Defaults to 100 if omitted.
+     * @param {number} [y] - Y position it is thrown from. Defaults to 300 if omitted.
+     */
     constructor(x, y) {
         super();
         this.loadImage('img/potion.png');
@@ -14,6 +18,11 @@ class ThrowableObject extends MovableObject {
         this.height = 50;
     }
 
+    /**
+     * Launches the bottle in the given direction and starts its flight physics/rotation.
+     * @param {number} [direction] - 1 to throw right, -1 to throw left. Defaults to 1.
+     * @returns {void}
+     */
     throw(direction = 1) {
         this.speedY = -20; // Initial upward speed
         this.speedX = 10 * direction;  // Initial forward speed
@@ -21,7 +30,11 @@ class ThrowableObject extends MovableObject {
         this.animateRotation();
     }
 
-        applyGravity() {
+    /**
+     * Applies a simple gravity/forward-motion physics tick to the bottle while it's in flight.
+     * @returns {void}
+     */
+    applyGravity() {
         setInterval(() => {
             if (this.isAboveGround() || this.speedY > 0) {
                 this.y += this.speedY;
@@ -31,16 +44,29 @@ class ThrowableObject extends MovableObject {
         }, 1000 / 25);
     }
 
-        isAboveGround() {
-        return this.y < 450; // Bodenhöhe anpassen
+    /**
+     * Checks whether the bottle is still above ground level.
+     * @returns {boolean} true while the bottle hasn't reached the ground yet.
+     */
+    isAboveGround() {
+        return this.y < 450; // adjust ground height
     }
 
+    /**
+     * Starts the bottle's back-and-forth tumbling rotation while it flies.
+     * @returns {void}
+     */
     animateRotation() {
         setInterval(() => {
             this.rotationAngle = this.rotationAngle === 45 ? -45 : 45;
         }, 100);
     }
 
+    /**
+     * Draws the bottle rotated around its own center to match the current tumble angle.
+     * @param {CanvasRenderingContext2D} ctx - Canvas rendering context to draw into.
+     * @returns {void}
+     */
     draw(ctx) {
         const centerX = this.x + this.width / 2;
         const centerY = this.y + this.height / 2;
@@ -53,5 +79,4 @@ class ThrowableObject extends MovableObject {
         ctx.restore();
     }
 
-
-    }
+}

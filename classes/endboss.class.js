@@ -1,9 +1,9 @@
 class Endboss extends MovableObject {
     otherDirection = true;
-    energy = 25; // 5 Treffer mit einer Flasche (je 5 Schaden) noetig
+    energy = 25; // 5 hits with a potion needed (5 damage each)
     footstepsSound = new Audio('audio/monster-footsteps.mp3');
     hurtSound = new Audio('audio/deep-growl.mp3');
-    offset = { top: 30, bottom: 15, left: 248, right: 230 }; // an die tatsaechliche Sprite-Silhouette angepasst
+    offset = { top: 30, bottom: 15, left: 248, right: 230 }; // adjusted to match the actual sprite silhouette
 
     IMAGES_WALK = [
         'img/enemies/_PNG/2/Ent_02__WALK_000.png',
@@ -42,12 +42,15 @@ class Endboss extends MovableObject {
         'img/enemies/_PNG/2/Ent_02__DIE_009.png',
     ];
 
+    /**
+     * Creates the level 1 endboss at the far end of the level and starts its animation.
+     */
     constructor() {
         super().loadImage(this.IMAGES_WALK[0]);
         this.loadImages(this.IMAGES_WALK);
         this.loadImages(this.IMAGES_HURT);
         this.loadImages(this.IMAGES_DIE);
-        this.x = 4338; // weiter nach hinten versetzt (Level um ein weiteres Segment verlaengert)
+        this.x = 4338; // moved further back (level extended by one more segment)
         this.y = -40;
         this.speed = 0.1;
         this.height = 500;
@@ -57,26 +60,31 @@ class Endboss extends MovableObject {
         this.footstepsSound.volume = 0.3; // Set the volume to 30%
     }
 
+    /**
+     * Starts the endboss's movement loop, its walk/hurt/death animation loop and its footsteps sound loop.
+     * @returns {void}
+     */
     animate() {
         setInterval(() => {
             if (!this.isDead()) this.moveLeft();
         }, 1000 / 60);
 
         setInterval(() => {
-            if (this.isDead()) {
-                this.playDeathAnimation();
-            } else if (this.isHurt()) {
-                this.playAnimation(this.IMAGES_HURT);
-            } else {
-                this.playAnimation(this.IMAGES_WALK);
-            }
+            if (this.isDead()) {this.playDeathAnimation();
+            } else if (this.isHurt()) {this.playAnimation(this.IMAGES_HURT);
+            } else { this.playAnimation(this.IMAGES_WALK);}
         }, 150);
 
         setInterval(() => this.handleFootstepsSound(), 300);
     }
 
+    /**
+     * Plays or pauses the footsteps sound depending on whether the endboss is
+     * currently visible on screen and still alive.
+     * @returns {void}
+     */
     handleFootstepsSound() {
-        if (!this.world) return; // world ist am Anfang noch nicht gesetzt
+        if (!this.world) return; // world is not set yet at the start
 
         if (this.isDead()) {
             this.footstepsSound.pause();
@@ -89,6 +97,10 @@ class Endboss extends MovableObject {
         isVisible ? this.footstepsSound.play() : this.footstepsSound.pause();
     }
 
+    /**
+     * Applies a hit and plays the endboss's growl sound.
+     * @returns {void}
+     */
     hit() {
         super.hit();
         this.hurtSound.currentTime = 0;

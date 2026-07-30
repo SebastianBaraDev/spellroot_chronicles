@@ -1,4 +1,7 @@
 class PotionBottle extends MovableObject {
+    /**
+     * Creates a static potion bottle placeholder object.
+     */
     constructor() {
         super();
         this.loadImage('img/potion.png');
