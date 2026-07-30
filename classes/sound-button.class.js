@@ -31,13 +31,11 @@ class SoundButton extends DrawableObject {
     draw(ctx) {
         if (!this.img) return;
 
-        // Bild proportional in die Box einpassen (wie "object-fit: contain"),
-        // damit sound-off.png (anderes Seitenverhältnis als sound-on.png) nicht verzerrt wird
-        const aspectRatio = this.img.naturalWidth / this.img.naturalHeight || 1; 
+        const aspectRatio = this.img.naturalWidth / this.img.naturalHeight || 1;  
         let drawWidth = this.width;
         let drawHeight = this.width / aspectRatio;
 
-        if (drawHeight > this.height) {
+        if (drawHeight > this.height) {             // If the calculated height exceeds the button's height, adjust width and height to fit
             drawHeight = this.height;
             drawWidth = this.height * aspectRatio;
         }

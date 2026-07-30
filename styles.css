@@ -7,6 +7,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center; /* haelt den Inhalt vertikal mittig, auch wenn die h1 (Startscreen) ausgeblendet ist */
     background-image: url('img/canvas-bg.jpg');
     background-size: cover;
     background-position: center;
@@ -17,10 +18,15 @@ body {
 }
 
 h1 {
+    display: none; /* Startscreen: Titel ist schon im Bild zu sehen */
     color: #fff;
     margin-top: 20px;
     font-size: 88px;
     margin-block-end: 20px;
+}
+
+body.game-started h1 {
+    display: block; /* im laufenden Spiel auf dem Desktop wieder anzeigen */
 }
 
 canvas {
@@ -28,22 +34,41 @@ canvas {
     display: block;
 }
 
-#fullscreen:fullscreen,
-#fullscreen:-webkit-full-screen {
+#fullscreen {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #000000;
+}
+
+#fullscreen:fullscreen,
+#fullscreen:-webkit-full-screen {
+    background-image: url('img/canvas-bg.jpg'); /* fuellt seitliche Luecken statt schwarzer Balken */
+    background-size: cover;
+    background-position: center;
     width: 100%;
     height: 100%;
 }
 
-#fullscreen:fullscreen canvas,
-#fullscreen:-webkit-full-screen canvas {
+/* Wrapper hat immer exakt die sichtbare Groesse/Position der Canvas,
+   damit die Mobile-Buttons als Overlay passgenau auf der Canvas-Kante sitzen */
+#canvas-wrapper {
+    position: relative;
+    display: inline-block;
+    line-height: 0; /* verhindert unerwuenschten Abstand unter dem Canvas-Element */
+}
+
+#fullscreen:fullscreen #canvas-wrapper,
+#fullscreen:-webkit-full-screen #canvas-wrapper {
     width: auto;
     height: 100%;
     max-width: 100%;
     aspect-ratio: 720 / 480; /* haelt das Seitenverhaeltnis, egal wie gross der Bildschirm ist */
+}
+
+#fullscreen:fullscreen #canvas-wrapper canvas,
+#fullscreen:-webkit-full-screen #canvas-wrapper canvas {
+    width: 100%;
+    height: 100%;
 }
 
 /* Smartphone */
@@ -56,5 +81,110 @@ canvas {
 @media only screen and (max-height: 480px) {
     canvas {
         height: 100vh;
+    }
+}
+
+#rotate-device-message {
+    display: none; /* standardmaessig unsichtbar (Desktop / Querformat) */
+}
+
+/* greift nur auf Handys/Tablets im Hochformat, nicht bei einem schmalen Desktop-Fenster */
+@media (orientation: portrait) and (max-width: 1024px) {
+    h1,
+    #fullscreen {
+        display: none;
+    }
+
+    #rotate-device-message {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        padding: 40px;
+        box-sizing: border-box;
+        background-color: #000000;
+        color: #fff;
+        font-family: 'Roots', Arial, 'Helvetica', sans-serif;
+        font-size: 40px;
+    }
+}
+
+
+#mobile-controls {
+    display: none; /* standardmaessig aus: Desktop UND Startscreen (erst nach Spielstart per JS .visible) */
+}
+
+@media (orientation: landscape) and (max-width: 1024px) {
+    body.game-started h1 {
+        display: none; /* Mobile ist eh im Fullscreen, keine Ueberschrift noetig */
+    }
+
+    /* Handy/Tablet ohne echtes Fullscreen-API (z.B. iOS Safari): Fullscreen optisch nachbauen */
+    #fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-image: url('img/canvas-bg.jpg'); /* fuellt seitliche Luecken statt schwarzer Balken */
+        background-size: cover;
+        background-position: center;
+        z-index: 50;
+    }
+
+    #canvas-wrapper {
+        height: 100%;
+        width: auto;
+        max-width: 100%;
+        aspect-ratio: 720 / 480;
+    }
+
+    #canvas-wrapper canvas {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Buttons liegen direkt auf der Canvas, an der unteren Kante des Weges - kein separater Balken mehr */
+    #mobile-controls.visible {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 0 4% 0 4%;
+        box-sizing: border-box;
+    }
+
+    .mobile-controls-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .mobile-control-btn {
+        width: 84px;
+        height: 56px; /* gleiches Seitenverhaeltnis wie die zerlegten Button-Bilder */
+        padding: 0;
+        border: none;
+        background: none;
+        cursor: pointer;
+        touch-action: manipulation; /* verhindert Doppel-Tap-Zoom auf dem Button */
+        opacity: 0.85; /* leicht transparent, damit der Weg dahinter noch erkennbar bleibt */
+    }
+
+    .mobile-control-btn img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        pointer-events: none; /* Klick soll immer den button, nicht das img treffen */
+        -webkit-user-drag: none;
     }
 }

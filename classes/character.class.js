@@ -59,7 +59,7 @@ class Character extends MovableObject {
     ]
     
 
-    offset = { top: 80, bottom: 20, left: 160, right: 150 };
+    offset = { top: 40, bottom: 8, left: 178, right: 148 }; // an die tatsaechliche Sprite-Silhouette angepasst
     world;
     walkingSound = new Audio('audio/running.mp3');
     jumpSound = new Audio('audio/jump.mp3');
@@ -77,7 +77,7 @@ class Character extends MovableObject {
     animate() {
 
         setInterval(() => {
-            if (this.isDead()) return; // Stop movement if dead
+            if (this.isDead() || this.world.levelCompleteTriggered) return; // Stop movement if dead or level finished
 
             if (this.world.keyboard.RIGHT && this.x < this.world.level.level_end_x -780) { // Prevent moving right beyond the level end
                 this.moveRight();
@@ -103,6 +103,7 @@ class Character extends MovableObject {
         }, 1000 / 60); // Run at 60 FPS
 
         setInterval(() => {
+            if (this.world.levelCompleteTriggered) return; // letztes Frame einfrieren, sobald das Level geschafft ist
 
             if(this.isDead()){
                 this.playDeathAnimation();

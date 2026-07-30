@@ -1,9 +1,9 @@
 class Endboss extends MovableObject {
     otherDirection = true;
-    energy = 20;
+    energy = 25; // 5 Treffer mit einer Flasche (je 5 Schaden) noetig
     footstepsSound = new Audio('audio/monster-footsteps.mp3');
     hurtSound = new Audio('audio/deep-growl.mp3');
-    offset = { top: 80, bottom: 20, left: 200, right: 220 };
+    offset = { top: 30, bottom: 15, left: 248, right: 230 }; // an die tatsaechliche Sprite-Silhouette angepasst
 
     IMAGES_WALK = [
         'img/enemies/_PNG/2/Ent_02__WALK_000.png',
@@ -47,7 +47,7 @@ class Endboss extends MovableObject {
         this.loadImages(this.IMAGES_WALK);
         this.loadImages(this.IMAGES_HURT);
         this.loadImages(this.IMAGES_DIE);
-        this.x = 3619; // Position the endboss further to the right (Level um 719px verlaengert)
+        this.x = 4338; // weiter nach hinten versetzt (Level um ein weiteres Segment verlaengert)
         this.y = -40;
         this.speed = 0.1;
         this.height = 500;

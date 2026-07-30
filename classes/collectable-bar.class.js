@@ -11,9 +11,11 @@ class CollectableBar extends DrawableObject {
     }
 
     draw(ctx) {
-        super.draw(ctx); // draw the crystal image
+        super.draw(ctx);
         ctx.font = '24px Arial';
         ctx.fillStyle = 'white';
-        ctx.fillText('x ' + this.count, this.x + this.width + 10, this.y + this.height - 10);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle'; // vertikal exakt auf Hoehe des Bild-Mittelpunkts
+        ctx.fillText('x ' + this.count, this.x + this.width + 14, this.y + this.height / 2);
     }
 }

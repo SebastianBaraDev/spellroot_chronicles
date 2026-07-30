@@ -28,6 +28,10 @@
     <script src="/classes/level.class.js"></script>
     <script src="/classes/endboss.class.js"></script>
     <script src="/js/levels/level1.js"></script>
+    <script src="/classes/enemie-level2.class.js"></script>
+    <script src="/classes/ork-enemie-level2.class.js"></script>
+    <script src="/classes/endboss-level2.class.js"></script>
+    <script src="/js/levels/level2.js"></script>
     <script src="/js/fullscreen.js"></script>
     <script src="/js/game.js"></script>
 
@@ -37,8 +41,23 @@
 
     <h1>Spellroot Chronicles</h1>
     <div id="fullscreen">
-        <canvas id="gameCanvas" width="720" height="480"></canvas>
+        <div id="canvas-wrapper">
+            <canvas id="gameCanvas" width="720" height="480"></canvas>
+
+            <div id="mobile-controls">
+                <div class="mobile-controls-group">
+                    <button id="mobile-btn-left" class="mobile-control-btn"><img src="img/btn-move-left.png" alt="Links"></button>
+                    <button id="mobile-btn-right" class="mobile-control-btn"><img src="img/btn-move-right.png" alt="Rechts"></button>
+                </div>
+                <div class="mobile-controls-group">
+                    <button id="mobile-btn-jump" class="mobile-control-btn"><img src="img/btn-jump.png" alt="Springen"></button>
+                    <button id="mobile-btn-throw" class="mobile-control-btn"><img src="img/btn-throw.png" alt="Werfen"></button>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <div id="rotate-device-message">Turn your Device to play</div>
 
 </body>
 

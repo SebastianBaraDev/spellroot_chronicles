@@ -20,6 +20,8 @@ function initializeGame() {
     playButton.y = canvas.height / 2 - playButton.height / 2; // ggf. anpassen, falls die "Lücke" im Bild nicht mittig liegt
 
     canvas.addEventListener('click', handleStartScreenClick);
+    canvas.addEventListener('mousemove', handleStartScreenMouseMove);
+    setupMobileControls();
     drawStartScreen();
 }
 
@@ -30,30 +32,109 @@ function drawStartScreen() {
     ctx.drawImage(startScreenImage, 0, 0, canvas.width, canvas.height);
     ctx.drawImage(playButtonImage, playButton.x, playButton.y, playButton.width, playButton.height);
 
+    if (!isMobileLayout()) {
+        drawControlsHint();
+    }
+
     requestAnimationFrame(drawStartScreen);
+}
+
+function isMobileLayout() {
+    // gleiche Bildschirmbreiten-Grenze wie in styles.css fuer die Touch-Buttons
+    return window.matchMedia('(max-width: 1024px)').matches;
+}
+
+function drawControlsHint() {
+    ctx.font = '20px Roots, Arial, sans-serif';
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const hintY = canvas.height - 30; // liegt unten im dunklen Bodenbereich
+    ctx.fillText('◄ ►  Links/Rechts      ▲  Springen      D  Werfen', canvas.width / 2, hintY);
+}
+
+function getStartScreenMousePosition(event) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    return {
+        mouseX: (event.clientX - rect.left) * scaleX,
+        mouseY: (event.clientY - rect.top) * scaleY,
+    };
+}
+
+function isPlayButtonHovered(mouseX, mouseY) {
+    return mouseX >= playButton.x && mouseX <= playButton.x + playButton.width
+        && mouseY >= playButton.y && mouseY <= playButton.y + playButton.height;
 }
 
 function handleStartScreenClick(event) {
     if (gameStarted) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const mouseX = (event.clientX - rect.left) * scaleX;
-    const mouseY = (event.clientY - rect.top) * scaleY;
+    const { mouseX, mouseY } = getStartScreenMousePosition(event);
 
-    const isPlayButtonClicked = mouseX >= playButton.x && mouseX <= playButton.x + playButton.width
-        && mouseY >= playButton.y && mouseY <= playButton.y + playButton.height;
-
-    if (isPlayButtonClicked) {
+    if (isPlayButtonHovered(mouseX, mouseY)) {
         startGame();
     }
+}
+
+function handleStartScreenMouseMove(event) {
+    if (gameStarted) return;
+
+    const { mouseX, mouseY } = getStartScreenMousePosition(event);
+    canvas.style.cursor = isPlayButtonHovered(mouseX, mouseY) ? 'pointer' : 'default';
+}
+
+function setupMobileControls() {
+    bindControlButton('mobile-btn-left', 'LEFT');
+    bindControlButton('mobile-btn-right', 'RIGHT');
+    bindControlButton('mobile-btn-jump', 'UP');
+    bindControlButton('mobile-btn-throw', 'D');
+}
+
+function bindControlButton(buttonId, keyboardFlag) {
+    const button = document.getElementById(buttonId);
+
+    const press = (event) => {
+        event.preventDefault(); // verhindert Scrollen/Zoomen beim Antippen
+        if (!gameStarted) return;
+        resumeBackgroundMusicIfNeeded();
+        keyboard[keyboardFlag] = true;
+    };
+
+    const release = (event) => {
+        event.preventDefault();
+        keyboard[keyboardFlag] = false;
+    };
+
+    button.addEventListener('touchstart', press);
+    button.addEventListener('touchend', release);
+    button.addEventListener('touchcancel', release);
+    button.addEventListener('mousedown', press);
+    button.addEventListener('mouseup', release);
+    button.addEventListener('mouseleave', release);
 }
 
 function startGame() {
     gameStarted = true;
     canvas.removeEventListener('click', handleStartScreenClick);
+    document.getElementById('mobile-controls').classList.add('visible'); // Buttons sollen erst jetzt sichtbar werden
+    document.body.classList.add('game-started'); // h1 darf auf dem Desktop jetzt wieder erscheinen
+
+    if (isMobileLayout()) {
+        enterFullscreen(document.getElementById('fullscreen')); // Handy/Tablet: direkt ins echte Fullscreen
+    }
+
     world = new World(canvas, keyboard); // Level 1 startet erst hier
+}
+
+function goToNextLevel() {
+    if (world) {
+        world.stop(); // alte Spiel-Schleife (Intervalle, Sounds, requestAnimationFrame) beenden
+    }
+    world = new World(canvas, keyboard, level2, true); // level2 ist aktuell das letzte Level
 }
 
 function resumeBackgroundMusicIfNeeded() {

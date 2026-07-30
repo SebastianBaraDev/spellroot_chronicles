@@ -19,13 +19,21 @@ class World {
     replayButtonImage = new Image();
     replayButton = null;
     backgroundMusic = new Audio('audio/bg-music.mp3');
+    winSound = new Audio('audio/win-sound.mp3');
+    levelCompleteTriggered = false;
+    nextLevelSignImage = new Image();
+    nextLevelSign = null;
+    stopped = false;
+    isLastLevel = false;
 
-    constructor(canvas, keyboard) {
+    constructor(canvas, keyboard, level = level1, isLastLevel = false) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.keyboard = keyboard;
-        this.level = level1;
+        this.level = level;
+        this.isLastLevel = isLastLevel;
         this.replayButtonImage.src = 'img/replay-btn.png';
+        this.nextLevelSignImage.src = 'img/btn-next-level.png';
         this.soundButton = new SoundButton(this.canvas.width, (isMuted) => this.applyMuteToAllSounds(isMuted));
         this.fullscreenButton = new FullscreenButton(this.canvas.width, this.canvas.height, () => toggleFullscreen());
         this.draw();
@@ -43,18 +51,22 @@ class World {
     }
 
     draw() {
+        if (this.stopped) return; // altes World-Objekt nach einem Levelwechsel nicht mehr weiterzeichnen
+
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // Clear the canvas before drawing
 
         this.ctx.translate(this.camera_x, 0); // Move the camera
 
         this.addObjectToMap(this.level.backgroundObjects);
-
-        this.addObjectToMap(this.level.enemies);
         this.addObjectToMap(this.level.clouds);
-        this.addObjectToMap(this.throwableObjects);
+
+        // Draw collectable objects first, so that enemies appear behind them (not in front)
         this.addObjectToMap(this.level.collectableObject);
         this.addObjectToMap(this.level.potionObjects);
         this.addObjectToMap(this.level.scrollObjects);
+
+        this.addObjectToMap(this.level.enemies);
+        this.addObjectToMap(this.throwableObjects);
         this.addToMap(this.character);
 
         this.ctx.translate(-this.camera_x, 0); // Move the camera back to the original position
@@ -63,13 +75,23 @@ class World {
         this.addToMap(this.collectableBar); // Collectable bar fixed on screen (outside camera translate)
         this.addToMap(this.potionBar);
         this.addToMap(this.soundButton);
-        this.addToMap(this.fullscreenButton);
+        if (!isMobileLayout()) {
+            this.addToMap(this.fullscreenButton); // on mobile the fullscreen button is not displayed, so it doesn't need to be drawn
+        }
 
         if (this.character.isDead()) {
             this.handleGameOver();
+        } else if (this.getEndboss()?.isDead()) {
+            this.handleLevelComplete();
         }
 
-        requestAnimationFrame(() => this.draw()); // Call draw again on the next frame
+        if (!this.stopped) {
+            requestAnimationFrame(() => this.draw()); // Call draw again on the next frame
+        }
+    }
+
+    getEndboss() {
+        return this.level.enemies.find(enemy => enemy instanceof Endboss || enemy instanceof EndbossLevel2);
     }
 
     handleGameOver() {
@@ -93,21 +115,74 @@ class World {
             height: buttonSize,
         };
         this.ctx.filter = 'invert(1)';
-        this.ctx.filter = 'invert(1)';
         this.ctx.drawImage(this.replayButtonImage, this.replayButton.x, this.replayButton.y, buttonSize, buttonSize);
-        this.ctx.filter = 'none';
         this.ctx.filter = 'none';
     }
 
-    handleReplayButtonClick(mouseX, mouseY) {
-        if (!this.character.isDead() || !this.replayButton) return;
+    isReplayButtonHovered(mouseX, mouseY) {
+        if (!this.character.isDead() || !this.replayButton) return false;
 
-        const isClicked = mouseX >= this.replayButton.x && mouseX <= this.replayButton.x + this.replayButton.width
+        return mouseX >= this.replayButton.x && mouseX <= this.replayButton.x + this.replayButton.width
             && mouseY >= this.replayButton.y && mouseY <= this.replayButton.y + this.replayButton.height;
+    }
 
-        if (isClicked) {
-            location.reload(); // führt zurück zum Startscreen und setzt das komplette Spiel zurück
+    handleReplayButtonClick(mouseX, mouseY) {
+        if (this.isReplayButtonHovered(mouseX, mouseY)) {
+            location.reload(); // reset the game and move to the start screen
         }
+    }
+
+    handleLevelComplete() {
+        if (!this.levelCompleteTriggered) {
+            this.levelCompleteTriggered = true;
+            this.winSound.currentTime = 0;
+            this.winSound.play().catch(() => {});
+        }
+
+        if (this.isLastLevel) {
+            this.ctx.font = '64px Roots';
+            this.ctx.fillStyle = 'white';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText('THE END', this.canvas.width / 2, this.canvas.height / 2);
+            return;
+        }
+
+        this.ctx.font = '48px Roots';
+        this.ctx.fillStyle = 'white';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText('LEVEL DONE', this.canvas.width / 2, this.canvas.height / 2 - 30);
+
+        const signWidth = 220;
+        const signHeight = 147; // Seitenverhaeltnis des Next-Level-Schilds (768x512)
+        this.nextLevelSign = {
+            x: this.canvas.width / 2 - signWidth / 2,
+            y: this.canvas.height / 2 + 5,
+            width: signWidth,
+            height: signHeight,
+        };
+        this.ctx.drawImage(this.nextLevelSignImage, this.nextLevelSign.x, this.nextLevelSign.y, signWidth, signHeight);
+    }
+
+    isNextLevelSignHovered(mouseX, mouseY) {
+        if (!this.getEndboss()?.isDead() || !this.nextLevelSign) return false;
+
+        return mouseX >= this.nextLevelSign.x && mouseX <= this.nextLevelSign.x + this.nextLevelSign.width
+            && mouseY >= this.nextLevelSign.y && mouseY <= this.nextLevelSign.y + this.nextLevelSign.height;
+    }
+
+    handleNextLevelSignClick(mouseX, mouseY) {
+        if (this.isNextLevelSignHovered(mouseX, mouseY)) {
+            goToNextLevel(); // in game.js: baut ein frisches World-Objekt mit level2 auf
+        }
+    }
+
+    stop() {
+        this.stopped = true;
+        (this.intervalIds || []).forEach(id => clearInterval(id));
+        this.backgroundMusic.pause();
+        this.winSound.pause();
     }
 
     addObjectToMap(objects) {
@@ -137,24 +212,41 @@ class World {
     
     checkCollisions() {
         this.level.enemies.forEach(enemy => {
-            if (!this.character.isColliding(enemy)) return;
+            const isCollidingNow = this.character.isColliding(enemy);
+            const wasCollidingBefore = enemy.wasColliding || false;
+            enemy.wasColliding = isCollidingNow; // Zustand fuer den naechsten Frame merken
+
+            if (!isCollidingNow) return;
             if (enemy.isDead()) return; // Skip collision if enemy is dead
 
-            if (this.isStompOnEnemy(enemy)) {
+            // Nur im allerersten Kontakt-Frame entscheiden, ob es ein Stomp war - das macht die
+            // Erkennung unabhaengig davon, wie tief der Charakter durch einen grossen Physik-Tick
+            // schon in den Gegner "hineingefallen" ist.
+            if (!wasCollidingBefore && this.isStompOnEnemy(enemy)) {
                 this.stompEnemy(enemy);
-            } else if (!this.character.isHurt()) { // Only hit if the character is not already hurt
+                return;
+            }
+
+            if (!this.character.isHurt()) { // Only hit if the character is not already hurt
                 this.character.hit();
-            this.statusBar.setPercentage(this.character.energy);
+                this.statusBar.setPercentage(this.character.energy);
             }
         });
     }
 
-    isStompOnEnemy(enemy) {
-        const characterBottom = this.character.y + this.character.height - this.character.offset.bottom;
-        const enemyTop = enemy.y + enemy.offset.top;
-        const isFalling = this.character.speedY < 0;
+    getCharacterBottom() {
+        return this.character.y + this.character.height - this.character.offset.bottom;
+    }
 
-        return isFalling && characterBottom < enemyTop + 40; // kleiner Toleranzbereich
+    isStompOnEnemy(enemy) {
+        const characterBottom = this.getCharacterBottom();
+        const enemyTop = enemy.y + enemy.offset.top;
+        const enemyBottom = enemy.y + enemy.height - enemy.offset.bottom;
+        const enemyCenterY = (enemyTop + enemyBottom) / 2;
+
+        // Im Moment des ersten Kontakts: stehen die Fuesse noch oberhalb der Gegner-Mitte?
+        // Das reicht als Stomp - auch eine Beruehrung mit der Fussspitze zaehlt, solange sie von oben kommt.
+        return characterBottom < enemyCenterY;
     }
 
     stompEnemy(enemy) {
@@ -200,11 +292,14 @@ class World {
     }
 
     run() {
-        setInterval(() => this.checkCollisions(), 1000 / 60);
-        setInterval(() => this.checkCollectables(), 200);
-        setInterval(() => this.checkPotions(), 200);
-        setInterval(() => this.checkScrolls(), 200);
-        setInterval(() => this.checkThrowableCollisions(), 200);
+        // IDs merken, damit stop() sie beim Levelwechsel beenden kann
+        this.intervalIds = [
+            setInterval(() => this.checkCollisions(), 1000 / 60),
+            setInterval(() => this.checkCollectables(), 200),
+            setInterval(() => this.checkPotions(), 200),
+            setInterval(() => this.checkScrolls(), 200),
+            setInterval(() => this.checkThrowableCollisions(), 200),
+        ];
     }
 
     throwPotion() {
@@ -234,7 +329,7 @@ class World {
     }
 
     scheduleEnemyRemoval(enemy) {
-        if (enemy instanceof Endboss) return; // Do not remove the endboss
+        if (enemy instanceof Endboss || enemy instanceof EndbossLevel2) return; // Do not remove the endboss
 
         if (enemy.removalScheduled) return;
         enemy.removalScheduled = true;
@@ -246,19 +341,43 @@ class World {
 
     setupSoundButtonClick() {
         this.canvas.addEventListener('click', (event) => {
-            const rect = this.canvas.getBoundingClientRect();
-            const scaleX = this.canvas.width / rect.width;
-            const scaleY = this.canvas.height / rect.height;
-            const mouseX = (event.clientX - rect.left) * scaleX;
-            const mouseY = (event.clientY - rect.top) * scaleY;
+            const { mouseX, mouseY } = this.getCanvasMousePosition(event);
             this.soundButton.handleClick(mouseX, mouseY);
-            this.fullscreenButton.handleClick(mouseX, mouseY);
+            if (!isMobileLayout()) {
+                this.fullscreenButton.handleClick(mouseX, mouseY);
+            }
             this.handleReplayButtonClick(mouseX, mouseY);
+            this.handleNextLevelSignClick(mouseX, mouseY);
+        });
+
+        this.canvas.addEventListener('mousemove', (event) => {
+            const { mouseX, mouseY } = this.getCanvasMousePosition(event);
+            this.updateCursor(mouseX, mouseY);
         });
     }
 
+    getCanvasMousePosition(event) {
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+
+        return {
+            mouseX: (event.clientX - rect.left) * scaleX,
+            mouseY: (event.clientY - rect.top) * scaleY,
+        };
+    }
+
+    updateCursor(mouseX, mouseY) {
+        const isOverButton = this.soundButton.isClicked(mouseX, mouseY)
+            || (!isMobileLayout() && this.fullscreenButton.isClicked(mouseX, mouseY))
+            || this.isReplayButtonHovered(mouseX, mouseY)
+            || this.isNextLevelSignHovered(mouseX, mouseY);
+
+        this.canvas.style.cursor = isOverButton ? 'pointer' : 'default';
+    }
+
     applyMuteToAllSounds(isMuted) {
-        const endboss = this.level.enemies.find(enemy => enemy instanceof Endboss);
+        const endboss = this.level.enemies.find(enemy => enemy instanceof Endboss || enemy instanceof EndbossLevel2);
 
         const sounds = [
             this.backgroundMusic,
@@ -271,6 +390,7 @@ class World {
             this.potionSound,
             this.stompSound,
             this.gameOverSound,
+            this.winSound,
             endboss ? endboss.footstepsSound : null,
             endboss ? endboss.hurtSound : null,
         ];
