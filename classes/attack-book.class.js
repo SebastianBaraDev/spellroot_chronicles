@@ -1,4 +1,6 @@
 class AttackBookObject extends MovableObject {
+    offset = { top: 5, bottom: 4, left: 11, right: 11 }; // measured from the book artwork's actual (transparent-padded) content
+
     /**
      * Creates a collectible attack book that temporarily unlocks the character's attack ability.
      * @param {number} [x] - X position in the level. Defaults to 100 if omitted.

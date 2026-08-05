@@ -1,12 +1,13 @@
 class World {
     character;
-    level = level1;
+    level;
     statusBar = new StatusBar();
     canvas;
     ctx;
     keyboard;
     camera_x = 0;
     throwableObjects = [];
+    enemyProjectiles = [];
     collectableBar = new CollectableBar();
     potionBar = new PotionBar();
     sounds = new SoundManager();
@@ -28,11 +29,11 @@ class World {
      * collision-check intervals.
      * @param {HTMLCanvasElement} canvas - The game canvas to render into.
      * @param {Keyboard} keyboard - The shared keyboard input state.
-     * @param {Level} [level] - The level to play. Defaults to level1.
+     * @param {Level} level - The level to play (must be freshly built, e.g. via createLevel1()/createLevel2()).
      * @param {boolean} [isLastLevel] - Whether completing this level should show "THE END" instead of a next-level sign. Defaults to false.
      * @param {string} [characterId] - Which playable character sprite set to use. Defaults to 'wizard2'.
      */
-    constructor(canvas, keyboard, level = level1, isLastLevel = false, characterId = 'wizard2') {
+    constructor(canvas, keyboard, level, isLastLevel = false, characterId = 'wizard2') {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.keyboard = keyboard;
@@ -45,6 +46,7 @@ class World {
         this.applyMuteToAllSounds(this.soundButton.isMuted); // apply the persisted mute preference right away, not just on the next toggle
         this.fullscreenButton = new FullscreenButton(this.canvas.width, this.canvas.height, () => toggleFullscreen());
         this.homeButton = new HomeButton(this.canvas.width, () => goToHomescreen());
+        this.pauseButton = new PauseButton(this.canvas.width, (isPaused) => this.applyPauseState(isPaused));
         this.draw();
         this.setWorld();
         this.run();
@@ -101,6 +103,7 @@ class World {
 
         this.addObjectToMap(this.level.enemies);
         this.addObjectToMap(this.throwableObjects);
+        this.addObjectToMap(this.enemyProjectiles);
         this.addToMap(this.character);
 
         this.ctx.translate(-this.camera_x, 0); // Move the camera back to the original position
@@ -116,6 +119,7 @@ class World {
         this.addToMap(this.potionBar);
         this.addToMap(this.soundButton);
         this.addToMap(this.homeButton);
+        this.addToMap(this.pauseButton);
         if (!isMobileLayout()) {
             this.addToMap(this.fullscreenButton); // on mobile the fullscreen button is not displayed, so it doesn't need to be drawn
         }
@@ -197,8 +201,9 @@ class World {
     }
 
     /**
-     * Handles a click on the replay button: on both Game Over and "THE END" it
-     * returns to the start screen.
+     * Handles a click on the replay button: on "THE END" it returns to the start
+     * screen; on Game Over it restarts the level the character just died in, right
+     * from the beginning, with a completely fresh set of enemies/items.
      * @param {number} mouseX - Mouse X position in canvas coordinates.
      * @param {number} mouseY - Mouse Y position in canvas coordinates.
      * @returns {void}
@@ -206,7 +211,11 @@ class World {
     handleReplayButtonClick(mouseX, mouseY) {
         if (!this.isReplayButtonHovered(mouseX, mouseY)) return;
 
-        goToHomescreen(); // in game.js: returns to the start screen, from Game Over and THE END alike
+        if (this.isLastLevel && this.getEndboss()?.isDead()) {
+            goToHomescreen(); // in game.js: "THE END" -> back to the start screen
+        } else {
+            restartGame(); // in game.js: Game Over -> restart the current level from scratch
+        }
     }
 
     /**
@@ -281,6 +290,53 @@ class World {
         this.stopped = true;
         (this.intervalIds || []).forEach(id => clearInterval(id));
         this.sounds.stop();
+        this.destroyLevelObjects();
+        this.pauseEntitySounds();
+    }
+
+    /**
+     * Pauses every sound owned by the character and the enemies themselves (walking,
+     * jumping, footsteps, hurt growls, ...) - clearing intervals alone doesn't stop
+     * an Audio element that's already mid-playback/looping, so without this an enemy's
+     * footsteps could keep looping in the background after the World is discarded.
+     * @returns {void}
+     */
+    pauseEntitySounds() {
+        [this.character.walkingSound, this.character.jumpSound, this.character.hurtSound]
+            .filter(sound => sound)
+            .forEach(sound => sound.pause());
+
+        this.level.enemies.forEach(enemy => {
+            if (enemy.footstepsSound) enemy.footstepsSound.pause();
+            if (enemy.hurtSound) enemy.hurtSound.pause();
+        });
+    }
+
+    /**
+     * Clears every recurring interval owned by this level's own objects (character,
+     * enemies, clouds, in-flight throwables), so none of them keep moving/animating
+     * in the background after this World is discarded (restart, next level, replay).
+     * @returns {void}
+     */
+    destroyLevelObjects() {
+        this.character.clearIntervals();
+        this.level.enemies.forEach(enemy => enemy.clearIntervals());
+        this.level.clouds.forEach(cloud => cloud.clearIntervals());
+        this.throwableObjects.forEach(potion => potion.clearIntervals());
+        this.enemyProjectiles.forEach(projectile => projectile.clearIntervals());
+    }
+
+    /**
+     * Spawns a ranged projectile fired by an endboss towards the character, and
+     * remembers it so it gets drawn, moved and checked for a hit each frame.
+     * @param {number} x - Starting X position (usually the shooter's center).
+     * @param {number} y - Starting Y position (usually the shooter's center).
+     * @param {number} direction - 1 to fly right, -1 to fly left.
+     * @param {number} [damage] - Damage dealt to the character on impact. Defaults to 10.
+     * @returns {void}
+     */
+    spawnEnemyProjectile(x, y, direction, damage = 10) {
+        this.enemyProjectiles.push(new EnemyProjectile(x, y, direction, damage));
     }
 
     /**
@@ -338,6 +394,7 @@ class World {
             setInterval(() => collisions.checkScrolls(), 200),
             setInterval(() => collisions.checkAttackBooks(), 200),
             setInterval(() => collisions.checkThrowableCollisions(), 200),
+            setInterval(() => collisions.checkEnemyProjectileCollisions(), 1000 / 30),
         ];
     }
 
@@ -375,6 +432,7 @@ class World {
             const { mouseX, mouseY } = this.getCanvasMousePosition(event);
             this.soundButton.handleClick(mouseX, mouseY);
             this.homeButton.handleClick(mouseX, mouseY);
+            this.pauseButton.handleClick(mouseX, mouseY);
             if (!isMobileLayout()) {
                 this.fullscreenButton.handleClick(mouseX, mouseY);
             }
@@ -413,6 +471,7 @@ class World {
     updateCursor(mouseX, mouseY) {
         const isOverButton = this.soundButton.isClicked(mouseX, mouseY)
             || this.homeButton.isClicked(mouseX, mouseY)
+            || this.pauseButton.isClicked(mouseX, mouseY)
             || (!isMobileLayout() && this.fullscreenButton.isClicked(mouseX, mouseY))
             || this.isReplayButtonHovered(mouseX, mouseY)
             || this.isNextLevelSignHovered(mouseX, mouseY);
@@ -438,6 +497,18 @@ class World {
         ];
 
         this.sounds.applyMute(isMuted, extraSounds);
+    }
+
+    /**
+     * Freezes/unfreezes the entire game (every character/enemy interval and all
+     * collision checks) by toggling the global GAME_PAUSED flag. Wired to the
+     * Pause button next to the home button - makes it much easier to inspect and
+     * tune hitboxes with the debug overlay (H key), since nothing moves while paused.
+     * @param {boolean} isPaused - Whether the game should be paused.
+     * @returns {void}
+     */
+    applyPauseState(isPaused) {
+        GAME_PAUSED = isPaused;
     }
 
 }

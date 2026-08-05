@@ -1,20 +1,28 @@
 const LEVEL2_WIDTH = 719 * 7; // must match level_end_x in level.class.js
 
-const level2 = new Level(
-    createEnemiesLevel2(6, 3),
-    [
-        new Cloud(),
-        new Cloud(),
-        new Cloud(),
-        new Cloud(),
-        new Cloud(),
-    ],
-    createBackgroundsLevel2(),
-    createCollectablesLevel2(12),
-    createPotionsLevel2(9),
-    createScrollsLevel2(2),
-    createAttackBookLevel2()
-);
+/**
+ * Builds a brand-new level 2 (fresh enemies, items and clouds every time). Must be
+ * called every time a level 2 World is created - reusing one Level instance across
+ * restarts would replay with already-dead enemies and already-collected items.
+ * @returns {Level} A freshly built level 2.
+ */
+function createLevel2() {
+    return new Level(
+        createEnemiesLevel2(6, 3),
+        [
+            new Cloud(),
+            new Cloud(),
+            new Cloud(),
+            new Cloud(),
+            new Cloud(),
+        ],
+        createBackgroundsLevel2(),
+        createCollectablesLevel2(12),
+        createPotionsLevel2(9),
+        createScrollsLevel2(2),
+        createAttackBookLevel2()
+    );
+}
 
 /**
  * Builds the repeating, alternately-flipped purple background/land/rock layers for level 2.

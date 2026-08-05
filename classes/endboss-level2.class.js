@@ -72,9 +72,15 @@ class EndbossLevel2 extends MovableObject {
         'img/enemies/3_ORK/ORK_03_DIE_009.png',
     ];
 
+    BASE_SPEED = 0.1;
+    CHARGE_SPEED = 0.4;
+    CHARGE_RANGE = 450;
+    SHOOT_MIN_RANGE = 200;
+    SHOOT_MAX_RANGE = 800;
+
     /**
      * Creates the level 2 endboss at the far end of the level and starts its animation,
-     * jump loop and attack loop.
+     * jump loop, attack loop, proximity-speed check and ranged attack loop.
      */
     constructor() {
         super().loadImage(this.IMAGES_WALK[0]);
@@ -85,27 +91,28 @@ class EndbossLevel2 extends MovableObject {
         this.loadImages(this.IMAGES_DIE);
         this.x = 4338;
         this.y = this.groundY;
-        this.speed = 0.1;
+        this.speed = this.BASE_SPEED;
         this.height = 650;
         this.width = 900;
         this.animate();
         this.startJumpLoop();
         this.startAttackLoop();
+        this.startShootLoop();
         this.footstepsSound.loop = true;
         this.footstepsSound.volume = 0.3;
     }
 
     /**
-     * Starts the endboss's movement loop, its walk/jump/attack/hurt/death animation loop
-     * and its footsteps sound loop.
+     * Starts the endboss's movement loop, its walk/jump/attack/hurt/death animation loop,
+     * its proximity-speed check and its footsteps sound loop.
      * @returns {void}
      */
     animate() {
-        setInterval(() => {
+        this.registerInterval(() => {
             if (!this.isDead() && !this.attacking) this.moveLeft();
         }, 1000 / 60);
 
-        setInterval(() => {
+        this.registerInterval(() => {
             if (this.isDead()) {
                 this.playDeathAnimation();
             } else if (this.attacking) {
@@ -119,7 +126,38 @@ class EndbossLevel2 extends MovableObject {
             }
         }, 150);
 
-        setInterval(() => this.handleFootstepsSound(), 300);
+        this.registerInterval(() => this.handleFootstepsSound(), 300);
+        this.registerInterval(() => this.updateSpeedFromProximity(), 200);
+    }
+
+    /**
+     * Speeds the endboss up into a charge once the character comes within
+     * CHARGE_RANGE, so it can no longer just be out-walked at a safe distance.
+     * @returns {void}
+     */
+    updateSpeedFromProximity() {
+        if (!this.world || this.isDead() || this.attacking) return;
+
+        const distance = Math.abs(this.world.character.x - this.x);
+        this.speed = distance < this.CHARGE_RANGE ? this.CHARGE_SPEED : this.BASE_SPEED;
+    }
+
+    /**
+     * Periodically fires a ranged energy projectile at the character while it's
+     * within shooting range and not already busy jumping/attacking, so the
+     * endboss can't be safely potion-spammed from a distance.
+     * @returns {void}
+     */
+    startShootLoop() {
+        this.registerInterval(() => {
+            if (!this.world || this.isDead() || this.jumping || this.attacking) return;
+
+            const distance = Math.abs(this.world.character.x - this.x);
+            if (distance < this.SHOOT_MIN_RANGE || distance > this.SHOOT_MAX_RANGE) return;
+
+            const direction = this.world.character.x < this.x ? -1 : 1;
+            this.world.spawnEnemyProjectile(this.x + this.width / 2, this.y + this.height / 2, direction, 10);
+        }, 3000 + Math.random() * 2000);
     }
 
     /**
@@ -129,13 +167,13 @@ class EndbossLevel2 extends MovableObject {
      * @returns {void}
      */
     startJumpLoop() {
-        setInterval(() => {
+        this.registerInterval(() => {
             if (!this.isDead() && !this.jumping && !this.attacking) {
                 this.startJump();
             }
         }, 3500 + Math.random() * 3000);
 
-        setInterval(() => {
+        this.registerInterval(() => {
             if (!this.jumping) return;
 
             this.y -= this.speedY;
@@ -160,7 +198,7 @@ class EndbossLevel2 extends MovableObject {
      * @returns {void}
      */
     startAttackLoop() {
-        setInterval(() => {
+        this.registerInterval(() => {
             if (!this.isDead() && !this.attacking && !this.jumping) {
                 this.attacking = true;
                 this.currentImage = 0;

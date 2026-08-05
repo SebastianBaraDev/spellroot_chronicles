@@ -7,13 +7,43 @@ class MovableObject extends DrawableObject {
     lastHit = 0;
     deathAnimationStarted = false;
     offset = { top: 0, bottom: 0, left: 0, right: 0 };
+    intervalIds = [];
+
+    /**
+     * Starts a setInterval and remembers its ID so clearIntervals() can stop it later.
+     * Every recurring loop on a MovableObject (movement, animation, physics, ...) should
+     * go through this instead of a raw setInterval, so intervals don't keep running
+     * forever in the background after the object's level has been torn down.
+     * @param {Function} callback - The function to run on each tick.
+     * @param {number} delay - Interval delay in milliseconds.
+     * @returns {number} The interval ID.
+     */
+    registerInterval(callback, delay) {
+        const id = setInterval(() => {
+            if (typeof GAME_PAUSED !== 'undefined' && GAME_PAUSED) return; // frozen while paused (Pause button)
+            callback();
+        }, delay);
+        this.intervalIds.push(id);
+        return id;
+    }
+
+    /**
+     * Stops every interval this object registered via registerInterval(). Called when
+     * the object's level is torn down (restart, next level, game over), so discarded
+     * objects don't keep ticking in the background after they're no longer visible.
+     * @returns {void}
+     */
+    clearIntervals() {
+        this.intervalIds.forEach(id => clearInterval(id));
+        this.intervalIds = [];
+    }
 
     /**
      * Runs a simple gravity tick that pulls the object back down once it's above ground.
      * @returns {void}
      */
     applyGravity () {
-        setInterval(() => {
+        this.registerInterval(() => {
             if(this.isAboveGround() || this.speedY > 0) {
             this.y -= this.speedY;
             this.speedY -= this.acceleration;
@@ -44,6 +74,28 @@ class MovableObject extends DrawableObject {
             this.speedY = 0;
             this.jumping = false;
         }
+    }
+
+    /**
+     * Draws this object's actual collision hitbox (position/size after applying its
+     * `offset`) when the global hitbox debug overlay is switched on (toggle with the
+     * H key while playing). Use this to visually check/tune each sprite's offset
+     * against how the sprite actually looks, instead of guessing offset numbers blind.
+     * @param {CanvasRenderingContext2D} ctx - Canvas rendering context to draw into.
+     * @returns {void}
+     */
+    drawFrame(ctx) {
+        if (typeof DEBUG_HITBOXES === 'undefined' || !DEBUG_HITBOXES) return;
+
+        const offset = this.offset || { top: 0, bottom: 0, left: 0, right: 0 };
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(
+            this.x + offset.left,
+            this.y + offset.top,
+            this.width - offset.left - offset.right,
+            this.height - offset.top - offset.bottom
+        );
     }
 
     /**

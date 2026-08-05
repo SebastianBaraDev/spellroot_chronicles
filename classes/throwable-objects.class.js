@@ -35,7 +35,7 @@ class ThrowableObject extends MovableObject {
      * @returns {void}
      */
     applyGravity() {
-        setInterval(() => {
+        this.registerInterval(() => {
             if (this.isAboveGround() || this.speedY > 0) {
                 this.y += this.speedY;
                 this.speedY += this.acceleration;
@@ -57,7 +57,7 @@ class ThrowableObject extends MovableObject {
      * @returns {void}
      */
     animateRotation() {
-        setInterval(() => {
+        this.registerInterval(() => {
             this.rotationAngle = this.rotationAngle === 45 ? -45 : 45;
         }, 100);
     }

@@ -1,19 +1,27 @@
 const LEVEL_WIDTH = 719 * 7; // must match level_end_x in level.class.js
 
-const level1 = new Level(
-    createEnemies(6),
-    [
-        new Cloud(),
-        new Cloud(),
-        new Cloud(),
-        new Cloud(),
-        new Cloud(),
-    ],
-    createBackgrounds(),
-    createCollectables(15),
-    createPotions(7),
-    createScrolls(2)
-);
+/**
+ * Builds a brand-new level 1 (fresh enemies, items and clouds every time). Must be
+ * called every time a level 1 World is created - reusing one Level instance across
+ * restarts would replay with already-dead enemies and already-collected items.
+ * @returns {Level} A freshly built level 1.
+ */
+function createLevel1() {
+    return new Level(
+        createEnemies(6),
+        [
+            new Cloud(),
+            new Cloud(),
+            new Cloud(),
+            new Cloud(),
+            new Cloud(),
+        ],
+        createBackgrounds(),
+        createCollectables(15),
+        createPotions(7),
+        createScrolls(2)
+    );
+}
 
 /**
  * Builds the repeating, alternately-flipped background/land/rock layers for level 1.

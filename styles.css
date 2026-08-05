@@ -88,8 +88,9 @@ canvas {
     display: none; /* standardmaessig unsichtbar (Desktop / Querformat) */
 }
 
-/* greift nur auf Handys/Tablets im Hochformat, nicht bei einem schmalen Desktop-Fenster */
-@media (orientation: portrait) and (max-width: 1024px) {
+/* greift auf jedes Touch-Geraet im Hochformat (unabhaengig von der Bildschirmbreite - z.B. auch ein
+   iPad im Querformat ist breiter als klassische Handy-Breakpoints), nicht bei einem Desktop-Fenster mit Maus */
+@media (orientation: portrait) and (hover: none) and (pointer: coarse) {
     h1,
     #fullscreen {
         display: none;
@@ -120,7 +121,9 @@ canvas {
     display: none; /* standardmaessig aus: Desktop UND Startscreen (erst nach Spielstart per JS .visible) */
 }
 
-@media (orientation: landscape) and (max-width: 1024px) {
+/* wie oben: Touch-Erkennung statt fester Breite, damit z.B. ein iPad im Querformat
+   (1180px breit) die Touch-Buttons trotzdem bekommt */
+@media (orientation: landscape) and (hover: none) and (pointer: coarse) {
     body.game-started h1 {
         display: none; /* Mobile ist eh im Fullscreen, keine Ueberschrift noetig */
     }

@@ -68,11 +68,11 @@ class EnemieLevel2 extends MovableObject {
      * @returns {void}
      */
     animate() {
-        setInterval(() => {
+        this.registerInterval(() => {
             if (!this.isDead()) this.moveLeft();
         }, 1000 / 60);
 
-        setInterval(() => {
+        this.registerInterval(() => {
             if (this.isDead()) {
                 this.playDeathAnimation();
             } else if (this.jumping) {
@@ -90,13 +90,13 @@ class EnemieLevel2 extends MovableObject {
      * @returns {void}
      */
     startJumpLoop() {
-        setInterval(() => {
+        this.registerInterval(() => {
             if (!this.isDead() && !this.jumping) {
                 this.startJump();
             }
         }, 2000 + Math.random() * 2500);
 
-        setInterval(() => {
+        this.registerInterval(() => {
             if (!this.jumping) return;
 
             this.y -= this.speedY;

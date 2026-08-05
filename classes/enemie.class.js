@@ -48,11 +48,11 @@ class Enemie extends MovableObject {
      * @returns {void}
      */
     animate() {
-        setInterval(() => {
+        this.registerInterval(() => {
             if (!this.isDead()) this.moveLeft();
         }, 1000 / 60);
 
-        setInterval(() => {
+        this.registerInterval(() => {
             if (this.isDead()) {
                 this.playDeathAnimation();
             } else {

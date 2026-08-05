@@ -208,6 +208,28 @@ class CollisionManager {
     }
 
     /**
+     * Checks every in-flight endboss projectile against the character and applies
+     * damage on impact. Spent or off-screen projectiles are dropped from the list.
+     * @returns {void}
+     */
+    checkEnemyProjectileCollisions() {
+        const world = this.world;
+
+        world.enemyProjectiles.forEach(projectile => {
+            if (!projectile.hasHit && world.character.isColliding(projectile)) {
+                projectile.hasHit = true;
+                world.character.hit(projectile.damage);
+            }
+        });
+
+        world.enemyProjectiles = world.enemyProjectiles.filter(projectile => {
+            const isSpent = projectile.hasHit || projectile.x < -300 || projectile.x > world.level.level_end_x + 300;
+            if (isSpent) projectile.clearIntervals();
+            return !isSpent;
+        });
+    }
+
+    /**
      * Removes a dead enemy from the level once its death animation has finished.
      * The endboss is never removed, so its defeated pose stays visible.
      * @param {MovableObject} enemy - The enemy to remove.

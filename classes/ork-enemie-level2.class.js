@@ -67,11 +67,11 @@ class OrkEnemieLevel2 extends MovableObject {
      * @returns {void}
      */
     animate() {
-        setInterval(() => {
+        this.registerInterval(() => {
             if (!this.isDead() && !this.attacking) this.moveLeft();
         }, 1000 / 60);
 
-        setInterval(() => {
+        this.registerInterval(() => {
             if (this.isDead()) {
                 this.playDeathAnimation();
             } else if (this.attacking) {
@@ -79,7 +79,7 @@ class OrkEnemieLevel2 extends MovableObject {
             } else {this.playAnimation(this.IMAGES_RUN);}
         }, 100);
 
-        setInterval(() => this.checkAttackRange(), 200);
+        this.registerInterval(() => this.checkAttackRange(), 200);
     }
 
     /**

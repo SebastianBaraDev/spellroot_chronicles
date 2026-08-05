@@ -17,7 +17,7 @@ class Cloud extends MovableObject {
      * @returns {void}
      */
     animate() {
-        setInterval(() => {
+        this.registerInterval(() => {
             this.moveLeft();
         }, 1000/60); // Run at 60 FPS
     }

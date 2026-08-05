@@ -5,6 +5,21 @@ let keyboard = new Keyboard();
 let gameStarted = false;
 let selectedCharacterId = 'wizard2'; // default character, matches the previous single-character behavior
 
+// Tracks which level is currently being played, so a Game Over replay rebuilds
+// *that* level from scratch instead of always jumping back to level 1.
+let currentLevelFactory = createLevel1;
+let currentLevelIsLast = false;
+
+// Debug-only hitbox overlay (toggle with the H key while playing) - draws every
+// object's actual offset-adjusted collision box in red, so offsets can be tuned
+// by eye against how the sprites actually look on screen.
+let DEBUG_HITBOXES = false;
+
+// Freezes the character, every enemy, physics and collision checks (toggled via the
+// Pause button next to the home button) - makes it much easier to inspect/tune hitboxes
+// with the H overlay above, since nothing moves while paused.
+let GAME_PAUSED = false;
+
 const startScreenImage = new Image();
 startScreenImage.src = 'img/start-screen.png';
 
@@ -65,12 +80,17 @@ function drawStartScreen() {
 }
 
 /**
- * Checks whether the current viewport counts as a mobile/touch layout.
- * @returns {boolean} true if the viewport is at or below the mobile breakpoint.
+ * Checks whether this is a touch-primary device (phone or tablet), regardless of
+ * screen size. A pure width breakpoint misses larger touchscreens like an iPad in
+ * landscape (1180px wide, wider than typical tablet breakpoints) which have no
+ * physical keyboard, so touch capability itself is checked instead.
+ * @returns {boolean} true if the device should get the on-screen touch controls.
  */
 function isMobileLayout() {
-    // same screen-width breakpoint as in styles.css for the touch buttons
-    return window.matchMedia('(max-width: 1024px)').matches;
+    // same touch-detection condition as in styles.css for the touch buttons
+    const hasCoarsePointer = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    const hasTouchSupport = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
+    return hasCoarsePointer || hasTouchSupport;
 }
 
 /**
@@ -261,7 +281,9 @@ function startGame() {
         enterFullscreen(document.getElementById('fullscreen')); // phone/tablet: go straight into real fullscreen
     }
 
-    world = new World(canvas, keyboard, level1, false, selectedCharacterId); // level 1 only starts here
+    currentLevelFactory = createLevel1;
+    currentLevelIsLast = false;
+    world = new World(canvas, keyboard, currentLevelFactory(), currentLevelIsLast, selectedCharacterId); // level 1 only starts here, always freshly built
 }
 
 /**
@@ -273,13 +295,16 @@ function goToNextLevel() {
     if (world) {
         world.stop(); // stop the old game loop (intervals, sounds, requestAnimationFrame)
     }
-    world = new World(canvas, keyboard, level2, true, selectedCharacterId); // level2 is currently the last level
+    currentLevelFactory = createLevel2;
+    currentLevelIsLast = true; // level2 is currently the last level
+    world = new World(canvas, keyboard, currentLevelFactory(), currentLevelIsLast, selectedCharacterId);
 }
 
 /**
  * Restarts the game after a Game Over without reloading the page - stops the old
  * World's loop/sounds, clears any keys still held down, and builds a fresh World
- * for level 1 with the previously selected character.
+ * for the level the character just died in (not always level 1), with a brand-new
+ * set of enemies/items so nothing carries over as already dead/collected.
  * @returns {void}
  */
 function restartGame() {
@@ -287,7 +312,7 @@ function restartGame() {
         world.stop();
     }
     resetKeyboardState();
-    world = new World(canvas, keyboard, level1, false, selectedCharacterId);
+    world = new World(canvas, keyboard, currentLevelFactory(), currentLevelIsLast, selectedCharacterId);
 }
 
 /**
@@ -353,6 +378,7 @@ window.addEventListener('keydown', (event) => {
     if (event.keyCode == 40) keyboard.DOWN = true;
     if (event.keyCode == 32) keyboard.SPACE = true;
     if (event.keyCode == 68) keyboard.D = true;
+    if (event.keyCode == 72) DEBUG_HITBOXES = !DEBUG_HITBOXES; // H - toggle the hitbox debug overlay
 });
 
 /**

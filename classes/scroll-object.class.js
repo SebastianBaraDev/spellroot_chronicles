@@ -1,4 +1,6 @@
 class ScrollObject extends MovableObject {
+    offset = { top: 4, bottom: 5, left: 6, right: 5 }; // measured from the scroll artwork's actual (transparent-padded) content
+
     /**
      * Creates a collectible healing scroll.
      * @param {number} [x] - X position in the level. Defaults to 100 if omitted.

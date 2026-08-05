@@ -1,4 +1,6 @@
 class CollectableObject extends MovableObject {
+    offset = { top: 4, bottom: 4, left: 4, right: 4 }; // measured from crystal.png's actual (transparent-padded) artwork
+
     /**
      * Creates a collectible crystal at a random position within the level's crystal band.
      */
