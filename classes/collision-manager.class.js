@@ -219,6 +219,7 @@ class CollisionManager {
             if (!projectile.hasHit && world.character.isColliding(projectile)) {
                 projectile.hasHit = true;
                 world.character.hit(projectile.damage);
+                world.triggerHitFlash(); // extra visual cue for this specific attack, on top of the hurt sound
             }
         });
 

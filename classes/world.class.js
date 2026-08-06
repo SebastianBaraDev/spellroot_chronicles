@@ -23,6 +23,7 @@ class World {
     isLastLevel = false;
     levelStartTime = new Date().getTime();
     SPAWN_PROTECTION_MS = 1500; // grace period at the start of every level - the character can't take damage yet
+    hitFlashAlpha = 0; // current opacity of the red screen-flash shown when hit by an endboss energy ball
 
     /**
      * Builds the game world for one level: creates the character, HUD buttons and
@@ -78,6 +79,7 @@ class World {
 
         this.drawLevelObjects();
         this.drawHUD();
+        this.drawHitFlash();
         this.checkGameEndState();
 
         if (!this.stopped) {
@@ -125,6 +127,33 @@ class World {
         if (!isMobileLayout()) {
             this.addToMap(this.fullscreenButton); // on mobile the fullscreen button is not displayed, so it doesn't need to be drawn
         }
+    }
+
+    /**
+     * Triggers a brief red screen-flash, used to give a clear visual cue when the
+     * character is hit by an endboss's ranged energy ball (in addition to the
+     * character's own hurt sound, which already plays on every hit).
+     * @param {number} [intensity] - Starting opacity of the flash (0-1). Defaults to 0.45.
+     * @returns {void}
+     */
+    triggerHitFlash(intensity = 0.45) {
+        this.hitFlashAlpha = intensity;
+    }
+
+    /**
+     * Draws the red screen-flash overlay (if currently active) and fades it out a
+     * little more each frame.
+     * @returns {void}
+     */
+    drawHitFlash() {
+        if (this.hitFlashAlpha <= 0) return;
+
+        this.ctx.save();
+        this.ctx.fillStyle = `rgba(220, 30, 30, ${this.hitFlashAlpha})`;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.restore();
+
+        this.hitFlashAlpha = Math.max(0, this.hitFlashAlpha - 0.05); // fades out within a few frames
     }
 
     /**
@@ -304,13 +333,15 @@ class World {
      * @returns {void}
      */
     pauseEntitySounds() {
-        [this.character.walkingSound, this.character.jumpSound, this.character.hurtSound]
+        [this.character.walkingSound, this.character.jumpSound, this.character.hurtSound, this.character.snoreSound]
             .filter(sound => sound)
             .forEach(sound => sound.pause());
 
         this.level.enemies.forEach(enemy => {
             if (enemy.footstepsSound) enemy.footstepsSound.pause();
             if (enemy.hurtSound) enemy.hurtSound.pause();
+            if (enemy.laughSound) enemy.laughSound.pause();
+            if (enemy.chargeShotSound) enemy.chargeShotSound.pause();
         });
     }
 
@@ -510,8 +541,11 @@ class World {
             this.character.walkingSound,
             this.character.jumpSound,
             this.character.hurtSound,
+            this.character.snoreSound,
             endboss ? endboss.footstepsSound : null,
             endboss ? endboss.hurtSound : null,
+            endboss ? endboss.laughSound : null,
+            endboss ? endboss.chargeShotSound : null,
         ];
 
         this.sounds.applyMute(isMuted, extraSounds);

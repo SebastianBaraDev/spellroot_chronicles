@@ -1,7 +1,5 @@
-class Endboss extends MovableObject {
-    otherDirection = true;
+class Endboss extends EndbossBase {
     energy = 25; // 5 hits with a potion needed (5 damage each)
-    footstepsSound = new Audio('audio/monster-footsteps.mp3');
     hurtSound = new Audio('audio/deep-growl.mp3');
     offset = { top: 30, bottom: 15, left: 248, right: 230 }; // adjusted to match the actual sprite silhouette
 
@@ -52,7 +50,7 @@ class Endboss extends MovableObject {
 
     /**
      * Creates the level 1 endboss at the far end of the level and starts its
-     * animation, proximity-speed check and ranged attack loop.
+     * animation, proximity-speed check and ranged/melee attack loops.
      */
     constructor() {
         super().loadImage(this.IMAGES_WALK[0]);
@@ -67,18 +65,20 @@ class Endboss extends MovableObject {
         this.animate();
         this.startShootLoop();
         this.startMeleeThrowLoop();
+        this.startSightCheckLoop();
         this.footstepsSound.loop = true; // Set the footsteps sound to loop
         this.footstepsSound.volume = 0.3; // Set the volume to 30%
     }
 
     /**
-     * Starts the endboss's movement loop, its walk/hurt/death animation loop, its
-     * proximity-speed check and its footsteps sound loop.
+     * Starts the endboss's movement loop (turning to face and chase the character),
+     * its walk/hurt/death animation loop, its proximity-speed check and its
+     * footsteps sound loop.
      * @returns {void}
      */
     animate() {
         this.registerInterval(() => {
-            if (!this.isDead()) this.moveLeft();
+            if (!this.isDead()) this.moveTowardsCharacter();
         }, 1000 / 60);
 
         this.registerInterval(() => {
@@ -89,83 +89,5 @@ class Endboss extends MovableObject {
 
         this.registerInterval(() => this.handleFootstepsSound(), 300);
         this.registerInterval(() => this.updateSpeedFromProximity(), 200);
-    }
-
-    /**
-     * Speeds the endboss up into a charge once the character comes within
-     * CHARGE_RANGE, so it can no longer just be out-walked at a safe distance.
-     * @returns {void}
-     */
-    updateSpeedFromProximity() {
-        if (!this.world || this.isDead()) return;
-
-        const distance = Math.abs(this.world.character.x - this.x);
-        this.speed = distance < this.CHARGE_RANGE ? this.CHARGE_SPEED : this.BASE_SPEED;
-    }
-
-    /**
-     * Periodically fires a ranged energy projectile at the character while it's
-     * within shooting range, so the endboss can't be safely potion-spammed from
-     * a distance without any counter-threat.
-     * @returns {void}
-     */
-    startShootLoop() {
-        this.registerInterval(() => {
-            if (!this.world || this.isDead()) return;
-
-            const distance = Math.abs(this.world.character.x - this.x);
-            if (distance < this.SHOOT_MIN_RANGE || distance > this.SHOOT_MAX_RANGE) return;
-
-            const direction = this.world.character.x < this.x ? -1 : 1;
-            this.world.spawnEnemyProjectile(this.x + this.width / 2, this.y + this.height / 2, direction, 10);
-        }, 2500 + Math.random() * 1500);
-    }
-
-    /**
-     * Periodically lobs a bluish close-range throwable at the character (same arc-throw
-     * physics as the character's own potions) while it's too close for the ranged shot
-     * but not in direct contact, so getting in close doesn't make the endboss harmless
-     * from a distance-attack point of view.
-     * @returns {void}
-     */
-    startMeleeThrowLoop() {
-        this.registerInterval(() => {
-            if (!this.world || this.isDead()) return;
-
-            const distance = Math.abs(this.world.character.x - this.x);
-            if (distance < this.MELEE_THROW_MIN_RANGE || distance > this.MELEE_THROW_MAX_RANGE) return;
-
-            const direction = this.world.character.x < this.x ? -1 : 1;
-            this.world.spawnEnemyThrowable(this.x + this.width / 2, this.y + this.height / 2, direction, 8);
-        }, 2000 + Math.random() * 1500);
-    }
-
-    /**
-     * Plays or pauses the footsteps sound depending on whether the endboss is
-     * currently visible on screen and still alive.
-     * @returns {void}
-     */
-    handleFootstepsSound() {
-        if (!this.world) return; // world is not set yet at the start
-
-        if (this.isDead()) {
-            this.footstepsSound.pause();
-            return;
-        }
-
-        const isVisible = this.x + this.width > -this.world.camera_x
-            && this.x < -this.world.camera_x + this.world.canvas.width;
-
-        isVisible ? this.footstepsSound.play() : this.footstepsSound.pause();
-    }
-
-    /**
-     * Applies a hit and plays the endboss's growl sound.
-     * @returns {void}
-     */
-    hit() {
-        super.hit();
-        this.hurtSound.currentTime = 0;
-        this.hurtSound.play();
     }
 }

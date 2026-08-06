@@ -25,10 +25,18 @@ oder mit der VS-Code-Erweiterung "Live Server".
 | ◄ / ► (Pfeiltasten) | Laufen |
 | ▲ (Pfeiltaste hoch) | Springen |
 | D | Trank werfen, oder Angriff (wenn die Angriffsfähigkeit aktiv ist) |
+| H | Debug: zeigt die tatsächlichen (offset-bereinigten) Hitboxen aller Objekte als rotes Rechteck an |
 
-Auf mobilen/Touch-Geräten (Viewport ≤ 1024px) werden stattdessen Touch-Buttons
-eingeblendet (links/rechts/springen/werfen); der Fullscreen-Button wird auf
-Mobile ausgeblendet, da er dort nicht sinnvoll nutzbar ist.
+Auf echten Touch-Geräten (erkannt über `hover: none` + `pointer: coarse` bzw.
+`navigator.maxTouchPoints`, nicht mehr über eine feste Bildschirmbreite) werden
+stattdessen Touch-Buttons eingeblendet (links/rechts/springen/werfen); der
+Fullscreen-Button wird auf Mobile ausgeblendet, da er dort nicht sinnvoll
+nutzbar ist.
+
+Oben rechts neben dem Home-Button gibt es außerdem einen Pause-Button: er
+friert Character, Gegner, Physik und Kollisionsprüfungen komplett ein, was das
+Anpassen der Hitboxen mit dem H-Overlay deutlich einfacher macht, da sich
+währenddessen nichts mehr bewegt.
 
 ## Spielablauf
 

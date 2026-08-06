@@ -11,6 +11,7 @@ class Character extends MovableObject {
     speed = 5;
     otherDirection = false; // Assuming character faces right by default
     hurtSound = new Audio('audio/man-hurt.mp3');
+    snoreSound = new Audio('audio/snoring.mp3'); // played on loop, quietly, while asleep
 
     offset = { top: 100, bottom: 12, left: 185, right: 160 }; // adjusted to match the actual sprite silhouette
     world;
@@ -32,6 +33,8 @@ class Character extends MovableObject {
     lastActionTime = new Date().getTime();
     IDLE_TO_SLEEP_MS = 7000;
 
+    // snoreSound is configured to loop once in the constructor, since Audio doesn't support a field-level 'loop' shorthand
+
     SLEEP_HEAD_X = 225; // horizontal anchor for the Z's/bubble - roughly the head's center
     SLEEP_HEAD_TOP_Y = 110; // vertical anchor - roughly where the hood/head actually starts (NOT offset.top, that's the hitbox)
     SLEEP_BUBBLE_OFFSET_X = 15; // bubble position relative to SLEEP_HEAD_X (towards the mouth)
@@ -42,6 +45,9 @@ class Character extends MovableObject {
     SLEEP_NOD_PIVOT_Y = 195; // rotation pivot, roughly shoulder height - only the head above this line visibly swings
     SLEEP_NOD_AMPLITUDE_DEG = 2; // how far the head tilts side to side, in degrees
     SLEEP_NOD_PERIOD_MS = 4500; // how long one full nod cycle takes - bigger = slower/calmer
+
+    SNORE_CYCLES_PER_LOOP = 6; // the snoring.mp3 file contains 6 full snore cycles across its ~27s length
+    SLEEP_BUBBLE_PERIOD_MS = 4500; // fallback breathing-bubble cycle length (27s snore file / 6 snore cycles); auto-synced below once the real duration is known
 
     /**
      * Creates the playable character. Both playable characters have identical
@@ -69,6 +75,8 @@ class Character extends MovableObject {
         this.loadImages(this.IMAGES_HURT);
         this.loadImages(this.IMAGES_ATTACK);
         this.loadImages(this.IMAGES_IDLE);
+        this.snoreSound.loop = true;
+        this.snoreSound.volume = 0.2; // quiet - it shouldn't compete with the rest of the mix
         this.applyGravity();
         this.animate();
     }
@@ -125,6 +133,8 @@ class Character extends MovableObject {
         }, 1000 / 60); // Run at 60 FPS
 
         this.registerInterval(() => {
+            this.handleSnoreSound(); // evaluated even during the freeze checks below, so it reliably stops on death/level-complete
+
             if (this.world.levelCompleteTriggered) return; // freeze the last frame once the level is complete
 
             if(this.isDead()){
@@ -157,6 +167,22 @@ class Character extends MovableObject {
             this.walkingSound.play();
         } else {
             this.walkingSound.pause();
+        }
+    }
+
+    /**
+     * Plays or pauses the sleep-idle snoring sound depending on whether the character
+     * is currently in the sleep-idle state.
+     * @returns {void}
+     */
+    handleSnoreSound() {
+        if (this.isSleeping()) {
+            if (isFinite(this.snoreSound.duration) && this.snoreSound.duration > 0) {
+                this.SLEEP_BUBBLE_PERIOD_MS = (this.snoreSound.duration / this.SNORE_CYCLES_PER_LOOP) * 1000; // syncs the bubble's pulse to one snore cycle, not the whole (multi-cycle) file
+            }
+            this.snoreSound.play();
+        } else {
+            this.snoreSound.pause();
         }
     }
 
@@ -247,9 +273,21 @@ class Character extends MovableObject {
      */
     isSleeping() {
         if (this.isDead() || this.isHurt() || this.isAttacking || this.isAboveGround()) return false;
+        if (this.world.levelCompleteTriggered) return false; // freeze on the win screen instead of still snoring away
         if (this.world.keyboard.RIGHT || this.world.keyboard.LEFT) return false;
+        if (this.isEndbossFightActive()) return false; // no dozing off mid boss fight
 
         return new Date().getTime() - this.lastActionTime > this.IDLE_TO_SLEEP_MS;
+    }
+
+    /**
+     * Checks whether this level's endboss exists and is still alive, i.e. whether
+     * an endboss fight is currently ongoing.
+     * @returns {boolean} true while a living endboss is present in the level.
+     */
+    isEndbossFightActive() {
+        const endboss = this.world.getEndboss();
+        return !!endboss && !endboss.isDead() && !!endboss.hasSpottedCharacter;
     }
 
     /**
@@ -314,7 +352,8 @@ class Character extends MovableObject {
      * @returns {void}
      */
     drawSleepBubble(ctx, x, y, t) {
-        const radius = 6 + Math.sin(t * 2.2) * 3.5;
+        const angularSpeed = (2 * Math.PI) / (this.SLEEP_BUBBLE_PERIOD_MS / 1000); // one full grow/shrink cycle per snore
+        const radius = 6 + Math.sin(t * angularSpeed) * 3.5;
 
         ctx.save();
         ctx.globalAlpha = 0.8;

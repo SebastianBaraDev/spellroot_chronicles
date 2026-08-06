@@ -1,15 +1,11 @@
-class EndbossLevel2 extends MovableObject {
-    otherDirection = true;
+class EndbossLevel2 extends EndbossBase {
     energy = 60; // 12 hits with a potion needed (5 damage each)
-    footstepsSound = new Audio('audio/monster-footsteps.mp3');
     hurtSound = new Audio('audio/dragon-growl.mp3');
     offset = { top: 46, bottom: 20, left: 296, right: 257 }; // scaled proportionally to the larger sprite output
 
     groundY = -170; // 20px lower than before
     y = -170;
     speedY = 0;
-    jumping = false;
-    attacking = false;
 
     IMAGES_WALK = [
         'img/enemies/3_ORK/ORK_03_WALK_000.png',
@@ -79,10 +75,13 @@ class EndbossLevel2 extends MovableObject {
     SHOOT_MAX_RANGE = 800;
     MELEE_THROW_MIN_RANGE = 50; // just outside contact range
     MELEE_THROW_MAX_RANGE = 200; // up to where the ranged shot takes over (SHOOT_MIN_RANGE)
+    SHOOT_INTERVAL_MS = 3000; // slightly slower cadence than level 1's endboss
+    SHOOT_INTERVAL_JITTER_MS = 2000;
+    MELEE_THROW_INTERVAL_MS = 2500;
 
     /**
      * Creates the level 2 endboss at the far end of the level and starts its animation,
-     * jump loop, attack loop, proximity-speed check and ranged attack loop.
+     * jump loop, attack loop, proximity-speed check and ranged/melee attack loops.
      */
     constructor() {
         super().loadImage(this.IMAGES_WALK[0]);
@@ -101,18 +100,20 @@ class EndbossLevel2 extends MovableObject {
         this.startAttackLoop();
         this.startShootLoop();
         this.startMeleeThrowLoop();
+        this.startSightCheckLoop();
         this.footstepsSound.loop = true;
         this.footstepsSound.volume = 0.3;
     }
 
     /**
-     * Starts the endboss's movement loop, its walk/jump/attack/hurt/death animation loop,
+     * Starts the endboss's movement loop (turning to face and chase the character,
+     * paused during an axe swing), its walk/jump/attack/hurt/death animation loop,
      * its proximity-speed check and its footsteps sound loop.
      * @returns {void}
      */
     animate() {
         this.registerInterval(() => {
-            if (!this.isDead() && !this.attacking) this.moveLeft();
+            if (!this.isDead() && !this.attacking) this.moveTowardsCharacter();
         }, 1000 / 60);
 
         this.registerInterval(() => {
@@ -131,55 +132,6 @@ class EndbossLevel2 extends MovableObject {
 
         this.registerInterval(() => this.handleFootstepsSound(), 300);
         this.registerInterval(() => this.updateSpeedFromProximity(), 200);
-    }
-
-    /**
-     * Speeds the endboss up into a charge once the character comes within
-     * CHARGE_RANGE, so it can no longer just be out-walked at a safe distance.
-     * @returns {void}
-     */
-    updateSpeedFromProximity() {
-        if (!this.world || this.isDead() || this.attacking) return;
-
-        const distance = Math.abs(this.world.character.x - this.x);
-        this.speed = distance < this.CHARGE_RANGE ? this.CHARGE_SPEED : this.BASE_SPEED;
-    }
-
-    /**
-     * Periodically fires a ranged energy projectile at the character while it's
-     * within shooting range and not already busy jumping/attacking, so the
-     * endboss can't be safely potion-spammed from a distance.
-     * @returns {void}
-     */
-    startShootLoop() {
-        this.registerInterval(() => {
-            if (!this.world || this.isDead() || this.jumping || this.attacking) return;
-
-            const distance = Math.abs(this.world.character.x - this.x);
-            if (distance < this.SHOOT_MIN_RANGE || distance > this.SHOOT_MAX_RANGE) return;
-
-            const direction = this.world.character.x < this.x ? -1 : 1;
-            this.world.spawnEnemyProjectile(this.x + this.width / 2, this.y + this.height / 2, direction, 10);
-        }, 3000 + Math.random() * 2000);
-    }
-
-    /**
-     * Periodically lobs a bluish close-range throwable at the character (same arc-throw
-     * physics as the character's own potions) while it's too close for the ranged shot
-     * but not in direct contact and not already busy jumping/attacking, so getting in
-     * close doesn't make the endboss harmless from a distance-attack point of view.
-     * @returns {void}
-     */
-    startMeleeThrowLoop() {
-        this.registerInterval(() => {
-            if (!this.world || this.isDead() || this.jumping || this.attacking) return;
-
-            const distance = Math.abs(this.world.character.x - this.x);
-            if (distance < this.MELEE_THROW_MIN_RANGE || distance > this.MELEE_THROW_MAX_RANGE) return;
-
-            const direction = this.world.character.x < this.x ? -1 : 1;
-            this.world.spawnEnemyThrowable(this.x + this.width / 2, this.y + this.height / 2, direction, 8);
-        }, 2500 + Math.random() * 1500);
     }
 
     /**
@@ -229,34 +181,5 @@ class EndbossLevel2 extends MovableObject {
                 }, this.IMAGES_ATTACK.length * 150);
             }
         }, 4000 + Math.random() * 3000);
-    }
-
-    /**
-     * Plays or pauses the footsteps sound depending on whether the endboss is
-     * currently visible on screen and still alive.
-     * @returns {void}
-     */
-    handleFootstepsSound() {
-        if (!this.world) return;
-
-        if (this.isDead()) {
-            this.footstepsSound.pause();
-            return;
-        }
-
-        const isVisible = this.x + this.width > -this.world.camera_x
-            && this.x < -this.world.camera_x + this.world.canvas.width;
-
-        isVisible ? this.footstepsSound.play() : this.footstepsSound.pause();
-    }
-
-    /**
-     * Applies a hit and plays the endboss's growl sound.
-     * @returns {void}
-     */
-    hit() {
-        super.hit();
-        this.hurtSound.currentTime = 0;
-        this.hurtSound.play();
     }
 }
