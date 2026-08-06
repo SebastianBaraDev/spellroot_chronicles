@@ -4,7 +4,7 @@ class Enemie extends MovableObject {
     y = 250;
     otherDirection = true; // Assuming enemies face left by default
     energy = 5;
-    offset = { top: 18, bottom: 6, left: 98, right: 88 }; // top has extra buffer, since the raw bounding box also counted faint shadow/glow pixels
+    offset = { top: 18, bottom: 6, left: 110, right: 110 }; // top has extra buffer, since the raw bounding box also counted faint shadow/glow pixels
     IMAGES_RUN = [
             'img/enemies/_PNG/1/Ent_01__RUN_000.png',
             'img/enemies/_PNG/1/Ent_01__RUN_001.png',

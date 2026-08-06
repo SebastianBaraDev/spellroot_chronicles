@@ -12,7 +12,7 @@ class Character extends MovableObject {
     otherDirection = false; // Assuming character faces right by default
     hurtSound = new Audio('audio/man-hurt.mp3');
 
-    offset = { top: 40, bottom: 8, left: 178, right: 148 }; // adjusted to match the actual sprite silhouette
+    offset = { top: 100, bottom: 12, left: 185, right: 160 }; // adjusted to match the actual sprite silhouette
     world;
     walkingSound = new Audio('audio/running.mp3');
     jumpSound = new Audio('audio/jump.mp3');

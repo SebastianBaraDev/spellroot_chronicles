@@ -77,6 +77,8 @@ class EndbossLevel2 extends MovableObject {
     CHARGE_RANGE = 450;
     SHOOT_MIN_RANGE = 200;
     SHOOT_MAX_RANGE = 800;
+    MELEE_THROW_MIN_RANGE = 50; // just outside contact range
+    MELEE_THROW_MAX_RANGE = 200; // up to where the ranged shot takes over (SHOOT_MIN_RANGE)
 
     /**
      * Creates the level 2 endboss at the far end of the level and starts its animation,
@@ -98,6 +100,7 @@ class EndbossLevel2 extends MovableObject {
         this.startJumpLoop();
         this.startAttackLoop();
         this.startShootLoop();
+        this.startMeleeThrowLoop();
         this.footstepsSound.loop = true;
         this.footstepsSound.volume = 0.3;
     }
@@ -158,6 +161,25 @@ class EndbossLevel2 extends MovableObject {
             const direction = this.world.character.x < this.x ? -1 : 1;
             this.world.spawnEnemyProjectile(this.x + this.width / 2, this.y + this.height / 2, direction, 10);
         }, 3000 + Math.random() * 2000);
+    }
+
+    /**
+     * Periodically lobs a bluish close-range throwable at the character (same arc-throw
+     * physics as the character's own potions) while it's too close for the ranged shot
+     * but not in direct contact and not already busy jumping/attacking, so getting in
+     * close doesn't make the endboss harmless from a distance-attack point of view.
+     * @returns {void}
+     */
+    startMeleeThrowLoop() {
+        this.registerInterval(() => {
+            if (!this.world || this.isDead() || this.jumping || this.attacking) return;
+
+            const distance = Math.abs(this.world.character.x - this.x);
+            if (distance < this.MELEE_THROW_MIN_RANGE || distance > this.MELEE_THROW_MAX_RANGE) return;
+
+            const direction = this.world.character.x < this.x ? -1 : 1;
+            this.world.spawnEnemyThrowable(this.x + this.width / 2, this.y + this.height / 2, direction, 8);
+        }, 2500 + Math.random() * 1500);
     }
 
     /**

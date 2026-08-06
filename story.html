@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Story - Spellroot Chronicles</title>
+    <link rel="icon" type="png" sizes="32x32" href="img/favicon.png">
+    <style>
+        @font-face {
+            font-family: 'Roots';
+            src: url('./fonts/roots.ttf') format('truetype');
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #111;
+            background-image: url('img/canvas-bg.jpg');
+            background-size: cover;
+            background-attachment: fixed;
+            color: #eee;
+            margin: 0;
+            padding: 0 20px 80px;
+            line-height: 1.7;
+        }
+
+        .page {
+            max-width: 860px;
+            margin: 0 auto;
+            padding-top: 30px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 24px;
+            color: #7cf9ff;
+            text-decoration: none;
+            font-family: 'Roots', Arial, sans-serif;
+            font-size: 20px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        h1 {
+            font-family: 'Roots', Arial, sans-serif;
+            font-size: 52px;
+            margin: 0 0 8px;
+            color: #fff;
+            text-shadow: 0 0 12px rgba(124, 249, 255, 0.5);
+        }
+
+        h2 {
+            font-family: 'Roots', Arial, sans-serif;
+            font-size: 30px;
+            margin-top: 48px;
+            margin-bottom: 14px;
+            color: #7cf9ff;
+            border-bottom: 1px solid rgba(124, 249, 255, 0.3);
+            padding-bottom: 6px;
+        }
+
+        h3 {
+            font-family: 'Roots', Arial, sans-serif;
+            font-size: 22px;
+            margin: 0 0 6px;
+            color: #fff;
+        }
+
+        .story-text {
+            background: rgba(0, 0, 0, 0.45);
+            border-radius: 12px;
+            padding: 20px 26px;
+            font-size: 17px;
+        }
+
+        .story-text p {
+            margin: 0 0 16px;
+        }
+
+        .story-text p:last-child {
+            margin-bottom: 0;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+        }
+
+        /* Charaktere/Gegner-Grid braucht mehr Platz pro Karte, da die Portraits jetzt gross sind */
+        .portrait-grid {
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        }
+
+        .card {
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(124, 249, 255, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .card img {
+            width: 72px;
+            height: 72px;
+            object-fit: contain;
+            flex-shrink: 0;
+            image-rendering: -webkit-optimize-contrast;
+        }
+
+        .card.wide {
+            grid-column: 1 / -1;
+        }
+
+        .card-body p {
+            margin: 0;
+            font-size: 14.5px;
+            color: #d8d8d8;
+        }
+
+        .card-body .tag {
+            display: inline-block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #7cf9ff;
+            background: rgba(124, 249, 255, 0.12);
+            border-radius: 4px;
+            padding: 2px 6px;
+            margin-bottom: 6px;
+        }
+
+        /* Items: etwas kleiner als vorher und vertikal mittig neben dem Text */
+        .item-card {
+            align-items: center;
+        }
+
+        .item-card img {
+            width: 60px;
+            height: 60px;
+        }
+
+        /* Charaktere/Gegner: Bild ueber dem Text, deutlich groesser und auf den sichtbaren
+           Sprite-Inhalt herangezoomt (die PNGs haben viel transparenten Rand drumherum,
+           ein simples Vergroessern des <img> haette den Charakter kaum groesser gemacht) */
+        .portrait-card {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 6px;
+        }
+
+        .portrait-img-wrap {
+            width: min(70%, 190px);
+            aspect-ratio: 1 / 1;
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            margin-bottom: 6px;
+        }
+
+        .portrait-img-wrap img {
+            position: absolute;
+            width: auto;
+            height: auto;
+            max-width: none;
+            image-rendering: -webkit-optimize-contrast;
+        }
+
+        /* Attacken: gleiche Zoom-Technik wie bei den Portraits, aber im gewohnten
+           horizontalen Karten-Layout (Bild links, Text rechts) */
+        .attack-card {
+            align-items: center;
+        }
+
+        .attack-img-wrap {
+            width: 110px;
+            height: 110px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            flex-shrink: 0;
+        }
+
+        .attack-img-wrap img {
+            position: absolute;
+            width: auto;
+            height: auto;
+            max-width: none;
+            image-rendering: -webkit-optimize-contrast;
+        }
+
+        .attack-img-wrap.plain img {
+            position: static;
+            width: 70%;
+            height: 70%;
+            object-fit: contain;
+            margin: 15%;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <a class="back-link" href="index.html">&larr; Zurück</a>
+
+        <h1>Spellroot Chronicles</h1>
+
+        <div class="story-text">
+            <p>
+                Tief im Wald von Aldermoor wächst die Spellroot — eine uralte Wurzel, aus der seit
+                Jahrhunderten die Magie des ganzen Landes fließt. Solange sie geschützt ist, blühen die
+                Dörfer, die Ernten gedeihen, und die Zauberer der Akademie können ihre Kräfte weitergeben.
+                Seit jeher wachen die Ents, uralte Baumwesen des Waldes, über die Wurzel und ihren Hain.
+            </p>
+            <p>
+                Doch eines Nachts wird die Spellroot gestohlen. Ein Orkstamm, angeführt von einem finsteren
+                Kriegsherrn, dringt in den heiligen Hain ein und reißt die Wurzel aus dem Boden. Die dunkle
+                Magie der Orks korrumpiert dabei die Ents selbst — die einstigen Wächter kämpfen nun,
+                willenlos verdreht, an der Seite der Orks gegen jeden, der sich dem Stamm in den Weg stellt.
+            </p>
+            <p>
+                Ohne die Spellroot beginnt die Magie im Land zu verblassen — Kelan, ein junger
+                Zauberlehrling, spürt als Erster, wie seine eigenen Kräfte schwächer werden. Sein Mentor
+                Emric, ein alter, kampferprobter Magier, schickt Kelan los, um die Spellroot zurückzuholen,
+                bevor die Magie ganz erlischt.
+            </p>
+            <p>
+                Der Weg führt zunächst durch den verfluchten Wald, wo die korrumpierten Ents jeden Eindringling
+                aufhalten wollen — angeführt von einem gewaltigen, uralten Ent-Wächter, der einst selbst die
+                Spellroot beschützte. Wer ihn besiegt, gelangt weiter in die Tiefen der Orkfestung, vorbei an
+                Kreaturen, die vom schwindenden Zauber selbst korrumpiert wurden.
+            </p>
+            <p>
+                Am Ende der Reise wartet der Anführer der Orks: ein Endboss, der die gestohlene Kraft der
+                Spellroot für sich selbst missbraucht. Nur wer ihn besiegt, kann die Wurzel zurückbringen und
+                das Gleichgewicht der Magie wiederherstellen.
+            </p>
+        </div>
+
+        <h2>Charaktere</h2>
+        <div class="card-grid portrait-grid">
+            <div class="card portrait-card">
+                <div class="portrait-img-wrap">
+                    <img src="img/wizards/PNG/2_WIZARD/Wizard_02__IDLE_000.png" alt="Kelan"
+                         style="width:420.17%; height:150.06%; left:-176.52%; top:-48.36%;">
+                </div>
+                <div class="card-body">
+                    <span class="tag">Spielbar</span>
+                    <h3>Kelan</h3>
+                    <p>Der junge Zauberlehrling. Spürt als Erster den Verfall der Magie und zieht los,
+                        um die Spellroot zurückzuholen.</p>
+                </div>
+            </div>
+            <div class="card portrait-card">
+                <div class="portrait-img-wrap">
+                    <img src="img/wizards/PNG/1_WIZARD/Wizard_01__IDLE_000.png" alt="Emric"
+                         style="width:359.71%; height:128.47%; left:-137.95%; top:-27.79%;">
+                </div>
+                <div class="card-body">
+                    <span class="tag">Spielbar</span>
+                    <h3>Emric</h3>
+                    <p>Kelans erfahrener Mentor. Ein alter, kampferprobter Magier, der Kelan auf seine
+                        Mission schickt.</p>
+                </div>
+            </div>
+        </div>
+
+        <h2>Gegner</h2>
+        <div class="card-grid portrait-grid">
+            <div class="card portrait-card">
+                <div class="portrait-img-wrap">
+                    <img src="img/enemies/_PNG/1/Ent_01__RUN_000.png" alt="Korrumpierter Ent"
+                         style="width:241.00%; height:103.29%; left:-74.75%; top:-0.27%;">
+                </div>
+                <div class="card-body">
+                    <span class="tag">Wald</span>
+                    <h3>Korrumpierter Ent</h3>
+                    <p>Einst Wächter des Hains, jetzt von der dunklen Magie der Orks verdreht und
+                        kampfbereit gegen jeden Eindringling.</p>
+                </div>
+            </div>
+            <div class="card portrait-card">
+                <div class="portrait-img-wrap">
+                    <img src="img/enemies/_PNG/2/Ent_02__WALK_000.png" alt="Ent-Wächter (Endboss Level 1)"
+                         style="width:229.78%; height:98.48%; left:-67.46%; top:0.11%;">
+                </div>
+                <div class="card-body">
+                    <span class="tag">Endboss Level 1</span>
+                    <h3>Der uralte Ent-Wächter</h3>
+                    <p>Der größte und älteste der korrumpierten Ents. Bewacht den Weg aus dem Wald hinaus.</p>
+                </div>
+            </div>
+            <div class="card portrait-card">
+                <div class="portrait-img-wrap">
+                    <img src="img/enemies/1_ORK/ORK_01_RUN_000.png" alt="Ork-Krieger"
+                         style="width:224.01%; height:133.34%; left:-72.09%; top:-38.22%;">
+                </div>
+                <div class="card-body">
+                    <span class="tag">Festung</span>
+                    <h3>Ork-Krieger</h3>
+                    <p>Einfache Soldaten des Orkstamms, die die Festung und ihren Kriegsherrn bewachen.</p>
+                </div>
+            </div>
+            <div class="card portrait-card">
+                <div class="portrait-img-wrap">
+                    <img src="img/enemies/3_ORK/ORK_03_WALK_000.png" alt="Ork-Kriegsherr (Endboss Level 2)"
+                         style="width:237.64%; height:141.45%; left:-79.63%; top:-41.55%;">
+                </div>
+                <div class="card-body">
+                    <span class="tag">Endboss Level 2</span>
+                    <h3>Der Ork-Kriegsherr</h3>
+                    <p>Anführer des Orkstamms und Dieb der Spellroot. Der letzte Widersacher auf Kelans Weg.</p>
+                </div>
+            </div>
+        </div>
+
+        <h2>Items</h2>
+        <div class="card-grid">
+            <div class="card item-card">
+                <img src="img/crystal.png" alt="Kristall">
+                <div class="card-body">
+                    <span class="tag">Sammelobjekt</span>
+                    <h3>Magiekristall</h3>
+                    <p>Überreste der versickernden Magie der Spellroot. Werden im Level eingesammelt.</p>
+                </div>
+            </div>
+            <div class="card item-card">
+                <img src="img/potion.png" alt="Zaubertrank">
+                <div class="card-body">
+                    <span class="tag">Wurfwaffe</span>
+                    <h3>Zaubertrank</h3>
+                    <p>Wird gesammelt und kann auf Gegner geworfen werden, um ihnen Schaden zuzufügen.</p>
+                </div>
+            </div>
+            <div class="card item-card">
+                <img src="img/books/PNG/books (1).png" alt="Heilende Schriftrolle">
+                <div class="card-body">
+                    <span class="tag">Heilung</span>
+                    <h3>Schriftrolle</h3>
+                    <p>Eine alte Heilschrift der Akademie. Stellt beim Einsammeln Lebensenergie wieder her.</p>
+                </div>
+            </div>
+            <div class="card item-card">
+                <img src="img/books/PNG/books (4).png" alt="Zauberbuch">
+                <div class="card-body">
+                    <span class="tag">Fähigkeit</span>
+                    <h3>Zauberbuch</h3>
+                    <p>Schaltet für kurze Zeit Kelans Nahkampf-Angriff frei, um Gegner direkt zu treffen.</p>
+                </div>
+            </div>
+        </div>
+
+        <h2>Attacken</h2>
+        <div class="card-grid">
+            <div class="card wide attack-card">
+                <div class="attack-img-wrap">
+                    <img src="img/wizards/PNG/2_WIZARD/Wizard_02__ATTACK_000.png" alt="Nahkampf-Angriff"
+                         style="width:420.17%; height:150.06%; left:-176.52%; top:-48.36%;">
+                </div>
+                <div class="card-body">
+                    <span class="tag">Taste D</span>
+                    <h3>Nahkampf-Angriff</h3>
+                    <p>Nach dem Einsammeln eines Zauberbuchs kann Kelan Gegner in Reichweite direkt
+                        angreifen und Schaden austeilen.</p>
+                </div>
+            </div>
+            <div class="card wide attack-card">
+                <div class="attack-img-wrap plain">
+                    <img src="img/potion.png" alt="Trankwurf">
+                </div>
+                <div class="card-body">
+                    <span class="tag">Taste D</span>
+                    <h3>Trankwurf</h3>
+                    <p>Ohne aktives Zauberbuch wirft Kelan stattdessen einen gesammelten Zaubertrank in
+                        Blickrichtung, der Gegnern bei Treffer Schaden zufügt.</p>
+                </div>
+            </div>
+            <div class="card wide attack-card">
+                <div class="attack-img-wrap">
+                    <img src="img/enemies/1_ORK/ORK_01_ATTAK_000.png" alt="Ork-Angriff"
+                         style="width:273.72%; height:162.93%; left:-97.35%; top:-58.06%;">
+                </div>
+                <div class="card-body">
+                    <span class="tag">Gegner</span>
+                    <h3>Nahkampfschlag der Orks &amp; Ents</h3>
+                    <p>Gegner fügen Kelan bei Berührung Schaden zu — außer er springt von oben auf sie
+                        herab und schaltet sie mit einem Stampfangriff aus.</p>
+                </div>
+            </div>
+            <div class="card wide attack-card">
+                <div class="attack-img-wrap">
+                    <img src="img/enemies/3_ORK/ORK_03_WALK_000.png" alt="Fernangriff des Kriegsherrn"
+                         style="width:237.64%; height:141.45%; left:-79.63%; top:-41.55%;">
+                </div>
+                <div class="card-body">
+                    <span class="tag">Endboss</span>
+                    <h3>Fernangriff der Endgegner</h3>
+                    <p>Kommt Kelan zu nahe, laufen die Endgegner schneller auf ihn zu. Aus der Distanz
+                        schießen sie außerdem magische Geschosse ab.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

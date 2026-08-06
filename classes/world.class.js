@@ -8,6 +8,7 @@ class World {
     camera_x = 0;
     throwableObjects = [];
     enemyProjectiles = [];
+    enemyThrowables = [];
     collectableBar = new CollectableBar();
     potionBar = new PotionBar();
     sounds = new SoundManager();
@@ -104,6 +105,7 @@ class World {
         this.addObjectToMap(this.level.enemies);
         this.addObjectToMap(this.throwableObjects);
         this.addObjectToMap(this.enemyProjectiles);
+        this.addObjectToMap(this.enemyThrowables);
         this.addToMap(this.character);
 
         this.ctx.translate(-this.camera_x, 0); // Move the camera back to the original position
@@ -324,6 +326,7 @@ class World {
         this.level.clouds.forEach(cloud => cloud.clearIntervals());
         this.throwableObjects.forEach(potion => potion.clearIntervals());
         this.enemyProjectiles.forEach(projectile => projectile.clearIntervals());
+        this.enemyThrowables.forEach(throwable => throwable.clearIntervals());
     }
 
     /**
@@ -337,6 +340,20 @@ class World {
      */
     spawnEnemyProjectile(x, y, direction, damage = 10) {
         this.enemyProjectiles.push(new EnemyProjectile(x, y, direction, damage));
+    }
+
+    /**
+     * Spawns a bluish close-range throwable fired by an endboss towards the character
+     * (same arc-throw physics as the character's own potions), and remembers it so it
+     * gets drawn, moved and checked for a hit each frame.
+     * @param {number} x - Starting X position (usually the shooter's center).
+     * @param {number} y - Starting Y position (usually the shooter's center).
+     * @param {number} direction - 1 to fly right, -1 to fly left.
+     * @param {number} [damage] - Damage dealt to the character on impact. Defaults to 8.
+     * @returns {void}
+     */
+    spawnEnemyThrowable(x, y, direction, damage = 8) {
+        this.enemyThrowables.push(new EnemyThrowable(x, y, direction, damage));
     }
 
     /**
@@ -395,6 +412,7 @@ class World {
             setInterval(() => collisions.checkAttackBooks(), 200),
             setInterval(() => collisions.checkThrowableCollisions(), 200),
             setInterval(() => collisions.checkEnemyProjectileCollisions(), 1000 / 30),
+            setInterval(() => collisions.checkEnemyThrowableCollisions(), 1000 / 30),
         ];
     }
 

@@ -230,6 +230,30 @@ class CollisionManager {
     }
 
     /**
+     * Checks every in-flight enemy throwable (the bluish close-range orbs the endbosses
+     * lob at the character) against the character each tick, applies damage on hit, and
+     * removes any that hit, landed on the ground, or flew off the level.
+     * @returns {void}
+     */
+    checkEnemyThrowableCollisions() {
+        const world = this.world;
+
+        world.enemyThrowables.forEach(throwable => {
+            if (!throwable.hasHit && world.character.isColliding(throwable)) {
+                throwable.hasHit = true;
+                world.character.hit(throwable.damage);
+            }
+        });
+
+        world.enemyThrowables = world.enemyThrowables.filter(throwable => {
+            const isSpent = throwable.hasHit || throwable.y > 480
+                || throwable.x < -300 || throwable.x > world.level.level_end_x + 300;
+            if (isSpent) throwable.clearIntervals();
+            return !isSpent;
+        });
+    }
+
+    /**
      * Removes a dead enemy from the level once its death animation has finished.
      * The endboss is never removed, so its defeated pose stays visible.
      * @param {MovableObject} enemy - The enemy to remove.

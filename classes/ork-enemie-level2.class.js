@@ -5,7 +5,7 @@ class OrkEnemieLevel2 extends MovableObject {
     otherDirection = true;
     energy = 5;
     attacking = false;
-    offset = { top: 35, bottom: 12, left: 191, right: 171 }; // scaled proportionally (factor ~1.94) from the level 1 enemy offset
+    offset = { top: 150, bottom: 30, left: 191, right: 210 }; // scaled proportionally (factor ~1.94) from the level 1 enemy offset
 
     ATTACK_RANGE = 220; // distance at which the ork tries to attack with the hammer
 

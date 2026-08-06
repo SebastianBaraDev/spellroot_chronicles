@@ -192,6 +192,28 @@ canvas {
     }
 }
 
+#story-link {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    z-index: 60; /* liegt ueber der Canvas, wie die Mobile-Buttons/Impressum-Link */
+    color: #fff;
+    font-family: 'Roots', Arial, Helvetica, sans-serif;
+    font-size: 28px;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    text-shadow: 0 0 10px rgba(124, 249, 255, 0.6);
+    transition: text-shadow 0.15s ease;
+}
+
+#story-link:hover {
+    text-shadow: 0 0 16px rgba(124, 249, 255, 0.9);
+}
+
+body.game-started #story-link {
+    display: none; /* nur auf dem Startscreen relevant, waehrend des Spiels ausgeblendet */
+}
+
 #impressum-link {
     position: fixed;
     right: 12px;
