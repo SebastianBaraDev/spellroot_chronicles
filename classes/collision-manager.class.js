@@ -23,6 +23,8 @@ class CollisionManager {
      */
     checkCollisions() {
         const world = this.world;
+        if (world.character.isDead()) return; // Game Over already triggered - no more hurt reactions while enemies walk over the body
+
         // Only resolve one enemy interaction per tick - otherwise a single jump can stomp two
         // enemies at once when they stand right next to each other and the character overlaps
         // both in the same frame.

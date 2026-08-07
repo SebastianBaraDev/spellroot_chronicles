@@ -142,6 +142,17 @@ class EndbossBase extends MovableObject {
     }
 
     /**
+     * Checks whether the endboss currently falls within the camera's visible viewport.
+     * @returns {boolean} true if any part of the endboss is on screen right now.
+     */
+    isOnScreen() {
+        if (!this.world) return false;
+
+        return this.x + this.width > -this.world.camera_x
+            && this.x < -this.world.camera_x + this.world.canvas.width;
+    }
+
+    /**
      * Plays or pauses the footsteps sound depending on whether the endboss is
      * currently visible on screen and still alive, and speeds up its playback
      * rate while charging so faster footwork actually sounds faster too.
@@ -155,10 +166,7 @@ class EndbossBase extends MovableObject {
             return;
         }
 
-        const isVisible = this.x + this.width > -this.world.camera_x
-            && this.x < -this.world.camera_x + this.world.canvas.width;
-
-        if (isVisible) {
+        if (this.isOnScreen()) {
             const speedRatio = this.speed / this.BASE_SPEED;
             this.footstepsSound.playbackRate = Math.min(speedRatio, this.FOOTSTEPS_MAX_RATE);
             this.footstepsSound.play();

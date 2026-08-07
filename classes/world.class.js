@@ -2,6 +2,7 @@ class World {
     character;
     level;
     statusBar = new StatusBar();
+    bossStatusBar = null;
     canvas;
     ctx;
     keyboard;
@@ -16,6 +17,8 @@ class World {
     gameOverTriggered = false;
     replayButtonImage = new Image();
     replayButton = null;
+    homeSignImage = new Image();
+    homeSign = null;
     levelCompleteTriggered = false;
     nextLevelSignImage = new Image();
     nextLevelSign = null;
@@ -42,13 +45,15 @@ class World {
         this.level = level;
         this.isLastLevel = isLastLevel;
         this.character = new Character(characterId);
-        this.replayButtonImage.src = 'img/replay-btn.png';
+        this.replayButtonImage.src = 'img/replay-sign.png';
+        this.homeSignImage.src = 'img/home-sign.png';
         this.nextLevelSignImage.src = 'img/btn-next-level.png';
         this.soundButton = new SoundButton(this.canvas.width, (isMuted) => this.applyMuteToAllSounds(isMuted));
         this.applyMuteToAllSounds(this.soundButton.isMuted); // apply the persisted mute preference right away, not just on the next toggle
         this.fullscreenButton = new FullscreenButton(this.canvas.width, this.canvas.height, () => toggleFullscreen());
         this.homeButton = new HomeButton(this.canvas.width, () => goToHomescreen());
         this.pauseButton = new PauseButton(this.canvas.width, (isPaused) => this.applyPauseState(isPaused));
+        this.bossStatusBar = new EndbossStatusBar(this.canvas.width);
         this.draw();
         this.setWorld();
         this.run();
@@ -127,6 +132,26 @@ class World {
         if (!isMobileLayout()) {
             this.addToMap(this.fullscreenButton); // on mobile the fullscreen button is not displayed, so it doesn't need to be drawn
         }
+        this.drawBossStatusBar();
+    }
+
+    /**
+     * Shows the endboss energy bar (top-right, below the HOME/PAUSE/MUTE row) once an
+     * endboss is present in the level, keeping it in sync with the boss's current energy.
+     * Hidden again once the boss is dead, so it doesn't linger on the level-complete screen.
+     * @returns {void}
+     */
+    drawBossStatusBar() {
+        const endboss = this.getEndboss();
+        if (!endboss || endboss.isDead() || !endboss.isOnScreen()) return;
+
+        // Each endboss has its own max energy (fewer/more hits needed depending on
+        // strength), so the bar always reads against ITS full-health value, not a
+        // hardcoded 100 - otherwise a boss with maxEnergy 25 would show as ~1/4 full
+        // the instant it appears, even at full health.
+        const percentage = (endboss.energy / endboss.maxEnergy) * 100;
+        this.bossStatusBar.setPercentage(percentage);
+        this.addToMap(this.bossStatusBar);
     }
 
     /**
@@ -193,35 +218,36 @@ class World {
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2);
 
-        this.drawReplayButton(this.canvas.height / 2 + 40);
+        this.drawReplayAndHomeSigns(this.canvas.height / 2 + 40);
     }
 
     /**
-     * Draws the (inverted) replay button centered horizontally at the given y position
-     * and remembers its bounds for click/hover detection. Shared by the Game Over
-     * screen and the "THE END" screen.
-     * @param {number} y - Top y position to draw the button at.
+     * Draws the Replay sign and Home sign side by side, centered as a pair, at the
+     * given y position, remembering both signs' bounds for click/hover detection.
+     * Shared by the Game Over screen and the "THE END" screen.
+     * @param {number} y - Top y position to draw both signs at.
      * @returns {void}
      */
-    drawReplayButton(y) {
-        const buttonSize = 80;
-        this.replayButton = {
-            x: this.canvas.width / 2 - buttonSize / 2,
-            y: y,
-            width: buttonSize,
-            height: buttonSize,
-        };
-        this.ctx.filter = 'invert(1)';
-        this.ctx.drawImage(this.replayButtonImage, this.replayButton.x, this.replayButton.y, buttonSize, buttonSize);
-        this.ctx.filter = 'none';
+    drawReplayAndHomeSigns(y) {
+        const signWidth = 190;
+        const signHeight = 87; // aspect ratio of the cropped, cutout sign art (622x286)
+        const gap = 20;
+        const groupWidth = signWidth * 2 + gap;
+        const startX = this.canvas.width / 2 - groupWidth / 2;
+
+        this.replayButton = { x: startX, y: y, width: signWidth, height: signHeight };
+        this.homeSign = { x: startX + signWidth + gap, y: y, width: signWidth, height: signHeight };
+
+        this.ctx.drawImage(this.replayButtonImage, this.replayButton.x, this.replayButton.y, signWidth, signHeight);
+        this.ctx.drawImage(this.homeSignImage, this.homeSign.x, this.homeSign.y, signWidth, signHeight);
     }
 
     /**
-     * Checks whether the given canvas coordinates are over the replay button (visible on
+     * Checks whether the given canvas coordinates are over the replay sign (visible on
      * Game Over, and on the "THE END" screen after beating the last level).
      * @param {number} mouseX - Mouse X position in canvas coordinates.
      * @param {number} mouseY - Mouse Y position in canvas coordinates.
-     * @returns {boolean} true if the point is inside the replay button's bounds.
+     * @returns {boolean} true if the point is inside the replay sign's bounds.
      */
     isReplayButtonHovered(mouseX, mouseY) {
         const isReplayVisible = this.character.isDead() || (this.isLastLevel && this.getEndboss()?.isDead());
@@ -232,9 +258,24 @@ class World {
     }
 
     /**
-     * Handles a click on the replay button: on "THE END" it returns to the start
-     * screen; on Game Over it restarts the level the character just died in, right
-     * from the beginning, with a completely fresh set of enemies/items.
+     * Checks whether the given canvas coordinates are over the home sign (visible on
+     * Game Over, and on the "THE END" screen after beating the last level).
+     * @param {number} mouseX - Mouse X position in canvas coordinates.
+     * @param {number} mouseY - Mouse Y position in canvas coordinates.
+     * @returns {boolean} true if the point is inside the home sign's bounds.
+     */
+    isHomeSignHovered(mouseX, mouseY) {
+        const isHomeSignVisible = this.character.isDead() || (this.isLastLevel && this.getEndboss()?.isDead());
+        if (!isHomeSignVisible || !this.homeSign) return false;
+
+        return mouseX >= this.homeSign.x && mouseX <= this.homeSign.x + this.homeSign.width
+            && mouseY >= this.homeSign.y && mouseY <= this.homeSign.y + this.homeSign.height;
+    }
+
+    /**
+     * Handles a click on the replay sign: on "THE END" it restarts the whole game
+     * from level 1; on Game Over it restarts the level the character just died in,
+     * right from the beginning, with a completely fresh set of enemies/items.
      * @param {number} mouseX - Mouse X position in canvas coordinates.
      * @param {number} mouseY - Mouse Y position in canvas coordinates.
      * @returns {void}
@@ -243,10 +284,23 @@ class World {
         if (!this.isReplayButtonHovered(mouseX, mouseY)) return;
 
         if (this.isLastLevel && this.getEndboss()?.isDead()) {
-            goToHomescreen(); // in game.js: "THE END" -> back to the start screen
+            restartFullGame(); // in game.js: "THE END" -> restart the whole game from level 1
         } else {
             restartGame(); // in game.js: Game Over -> restart the current level from scratch
         }
+    }
+
+    /**
+     * Handles a click on the home sign: always returns to the start screen, from
+     * either the Game Over screen or the "THE END" screen.
+     * @param {number} mouseX - Mouse X position in canvas coordinates.
+     * @param {number} mouseY - Mouse Y position in canvas coordinates.
+     * @returns {void}
+     */
+    handleHomeSignClick(mouseX, mouseY) {
+        if (!this.isHomeSignHovered(mouseX, mouseY)) return;
+
+        goToHomescreen(); // in game.js: back to the start screen
     }
 
     /**
@@ -266,7 +320,7 @@ class World {
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
             this.ctx.fillText('THE END', this.canvas.width / 2, this.canvas.height / 2 - 20);
-            this.drawReplayButton(this.canvas.height / 2 + 40);
+            this.drawReplayAndHomeSigns(this.canvas.height / 2 + 40);
             return;
         }
 
@@ -486,6 +540,7 @@ class World {
                 this.fullscreenButton.handleClick(mouseX, mouseY);
             }
             this.handleReplayButtonClick(mouseX, mouseY);
+            this.handleHomeSignClick(mouseX, mouseY);
             this.handleNextLevelSignClick(mouseX, mouseY);
         });
 
@@ -523,6 +578,7 @@ class World {
             || this.pauseButton.isClicked(mouseX, mouseY)
             || (!isMobileLayout() && this.fullscreenButton.isClicked(mouseX, mouseY))
             || this.isReplayButtonHovered(mouseX, mouseY)
+            || this.isHomeSignHovered(mouseX, mouseY)
             || this.isNextLevelSignHovered(mouseX, mouseY);
 
         this.canvas.style.cursor = isOverButton ? 'pointer' : 'default';

@@ -1,5 +1,6 @@
 class Endboss extends EndbossBase {
     energy = 25; // 5 hits with a potion needed (5 damage each)
+    maxEnergy = 25; // this boss's full-health value - the energy bar reads its percentage against this, not a hardcoded 100
     hurtSound = new Audio('audio/deep-growl.mp3');
     offset = { top: 30, bottom: 15, left: 248, right: 230 }; // adjusted to match the actual sprite silhouette
 

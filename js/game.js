@@ -316,6 +316,22 @@ function restartGame() {
 }
 
 /**
+ * Restarts the whole game from level 1 after beating the last level ("THE END"),
+ * instead of just re-running the level the player currently stands in - stops the
+ * old World's loop/sounds, clears held-down keys, and builds a fresh level 1 World.
+ * @returns {void}
+ */
+function restartFullGame() {
+    if (world) {
+        world.stop();
+    }
+    resetKeyboardState();
+    currentLevelFactory = createLevel1;
+    currentLevelIsLast = false;
+    world = new World(canvas, keyboard, currentLevelFactory(), currentLevelIsLast, selectedCharacterId);
+}
+
+/**
  * Releases every movement/action key, so a restart never carries over a key that
  * was still held down at the moment of death.
  * @returns {void}
